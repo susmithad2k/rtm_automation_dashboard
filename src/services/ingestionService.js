@@ -5,6 +5,12 @@ export const loadTestCases = async () => {
   return response;
 };
 
+export const ingestJira = async () => {
+  const response = await apiClient.post('/ingest/jira');
+  return response;
+};
+
 export default {
   loadTestCases,
+  ingestJira,
 };

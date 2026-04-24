@@ -18,17 +18,38 @@ function Ingestion() {
     }
   };
 
+  const handleIngestJira = async () => {
+    setLoading(true);
+    setMessage('');
+    try {
+      const response = await ingestionService.ingestJira();
+      setMessage('Jira data ingested successfully!');
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Data Ingestion</h1>
       
-      <div className="mb-4">
+      <div className="mb-4 space-x-4">
         <button 
           onClick={handleLoadTestCases}
           disabled={loading}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Load Test Cases'}
+        </button>
+        
+        <button 
+          onClick={handleIngestJira}
+          disabled={loading}
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        >
+          {loading ? 'Loading...' : 'Ingest Jira'}
         </button>
       </div>
 
