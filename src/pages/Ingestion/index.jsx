@@ -31,6 +31,19 @@ function Ingestion() {
     }
   };
 
+  const handleIngestConfluence = async () => {
+    setLoading(true);
+    setMessage('');
+    try {
+      const response = await ingestionService.ingestConfluence();
+      setMessage('Confluence data ingested successfully!');
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Data Ingestion</h1>
@@ -50,6 +63,14 @@ function Ingestion() {
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Ingest Jira'}
+        </button>
+        
+        <button 
+          onClick={handleIngestConfluence}
+          disabled={loading}
+          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        >
+          {loading ? 'Loading...' : 'Ingest Confluence'}
         </button>
       </div>
 

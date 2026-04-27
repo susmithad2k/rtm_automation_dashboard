@@ -10,7 +10,13 @@ export const ingestJira = async () => {
   return response;
 };
 
+export const ingestConfluence = async () => {
+  const response = await apiClient.post('/ingest/confluence');
+  return response;
+};
+
 export default {
   loadTestCases,
   ingestJira,
+  ingestConfluence,
 };
