@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ingestionService from '../../services/ingestionService';
+import { Spinner } from '../../components/ui';
 
 function Ingestion() {
   const [message, setMessage] = useState('');
@@ -84,39 +85,44 @@ function Ingestion() {
         <button 
           onClick={handleLoadTestCases}
           disabled={loading}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
+          {loading && <Spinner size="sm" color="white" />}
           {loading ? 'Loading...' : 'Load Test Cases'}
         </button>
         
         <button 
           onClick={handleIngestJira}
           disabled={loading}
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
+          {loading && <Spinner size="sm" color="white" />}
           {loading ? 'Loading...' : 'Ingest Jira'}
         </button>
         
         <button 
           onClick={handleIngestConfluence}
-          disabled={loading}
-          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          disabled={loading} flex items-center gap-2"
+        >
+          {loading && <Spinner size="sm" color="white" />} className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Ingest Confluence'}
         </button>
 
         <button 
           onClick={handleGetStatus}
-          disabled={loading}
-          className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          disabled={loading} flex items-center gap-2"
+        >
+          {loading && <Spinner size="sm" color="white" />} className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Get Status'}
         </button>
 
         <button 
           onClick={handleGetHistory}
-          disabled={loading}
-          className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+          disabled={loading} flex items-center gap-2"
+        >
+          {loading && <Spinner size="sm" color="white" />} className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Get History'}
         </button>
