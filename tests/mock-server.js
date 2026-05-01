@@ -31,6 +31,81 @@ const mockConfluenceData = {
   ],
 };
 
+const mockTraceabilityMatrix = [
+  {
+    id: 'REQ-001',
+    requirement: 'User Authentication',
+    description: 'System shall support user login with email and password',
+    priority: 'High',
+    testCases: ['TC-001', 'TC-002', 'TC-003'],
+    coverage: '100%',
+    status: 'Verified',
+  },
+  {
+    id: 'REQ-002',
+    requirement: 'Data Validation',
+    description: 'System shall validate all input fields before submission',
+    priority: 'High',
+    testCases: ['TC-004', 'TC-005'],
+    coverage: '100%',
+    status: 'Verified',
+  },
+  {
+    id: 'REQ-003',
+    requirement: 'Report Generation',
+    description: 'Users shall be able to export reports in PDF and Excel formats',
+    priority: 'Medium',
+    testCases: ['TC-006', 'TC-007', 'TC-008', 'TC-009'],
+    coverage: '100%',
+    status: 'Verified',
+  },
+  {
+    id: 'REQ-004',
+    requirement: 'Dashboard Analytics',
+    description: 'Dashboard shall display real-time analytics and metrics',
+    priority: 'Medium',
+    testCases: ['TC-010', 'TC-011'],
+    coverage: '67%',
+    status: 'In Progress',
+  },
+  {
+    id: 'REQ-005',
+    requirement: 'API Integration',
+    description: 'System shall integrate with external APIs for data sync',
+    priority: 'Low',
+    testCases: ['TC-012'],
+    coverage: '50%',
+    status: 'Pending',
+  },
+  {
+    id: 'REQ-006',
+    requirement: 'Email Notifications',
+    description: 'System shall send email notifications for important events',
+    priority: 'Medium',
+    testCases: ['TC-013', 'TC-014', 'TC-015'],
+    coverage: '100%',
+    status: 'Verified',
+  },
+  {
+    id: 'REQ-007',
+    requirement: 'Role-based Access',
+    description: 'System shall implement role-based access control (RBAC)',
+    priority: 'High',
+    testCases: ['TC-016', 'TC-017'],
+    coverage: '100%',
+    status: 'Verified',
+  },
+  {
+    id: 'REQ-008',
+    requirement: 'Data Backup',
+    description: 'System shall perform automated daily backups',
+    priority: 'High',
+    testCases: [],
+    coverage: '0%',
+    status: 'Not Started',
+  },
+];
+
 let ingestionHistory = [];
 
 // Simulate processing delay
@@ -167,6 +242,90 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Get Trace Data (main endpoint)
+    if (path === '/api/trace' && method === 'GET') {
+      await delay(500);
+      const result = {
+        success: true,
+        data: mockTraceabilityMatrix,
+        total: mockTraceabilityMatrix.length,
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, result);
+      return;
+    }
+
+    // Get Traceability Matrix
+    if (path === '/api/trace/matrix' && method === 'GET') {
+      await delay(600);
+      const result = {
+        success: true,
+        data: mockTraceabilityMatrix,
+        total: mockTraceabilityMatrix.length,
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, result);
+      return;
+    }
+
+    // Get Requirements
+    if (path === '/api/trace/requirements' && method === 'GET') {
+      await delay(450);
+      const requirements = mockTraceabilityMatrix.map(item => ({
+        id: item.id,
+        requirement: item.requirement,
+        description: item.description,
+        priority: item.priority,
+        status: item.status,
+      }));
+      const result = {
+        success: true,
+        data: mockTraceabilityMatrix,
+        requirements: requirements,
+        total: requirements.length,
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, result);
+      return;
+    }
+
+    // Get Test Cases
+    if (path === '/api/trace/test-cases' && method === 'GET') {
+      await delay(550);
+      const result = {
+        success: true,
+        data: mockTraceabilityMatrix,
+        total: mockTraceabilityMatrix.length,
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, result);
+      return;
+    }
+
+    // Get Coverage Report
+    if (path === '/api/trace/coverage' && method === 'GET') {
+      await delay(700);
+      const totalReqs = mockTraceabilityMatrix.length;
+      const verifiedReqs = mockTraceabilityMatrix.filter(r => r.status === 'Verified').length;
+      const coveragePercentage = ((verifiedReqs / totalReqs) * 100).toFixed(2);
+      
+      const result = {
+        success: true,
+        data: mockTraceabilityMatrix,
+        summary: {
+          totalRequirements: totalReqs,
+          verifiedRequirements: verifiedReqs,
+          overallCoverage: `${coveragePercentage}%`,
+          pending: mockTraceabilityMatrix.filter(r => r.status === 'Pending').length,
+          inProgress: mockTraceabilityMatrix.filter(r => r.status === 'In Progress').length,
+          notStarted: mockTraceabilityMatrix.filter(r => r.status === 'Not Started').length,
+        },
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, result);
+      return;
+    }
+
     // Health check
     if (path === '/api/health' && method === 'GET') {
       sendJSON(res, 200, { status: 'ok', timestamp: new Date().toISOString() });
@@ -185,12 +344,19 @@ server.listen(PORT, () => {
   console.log('\n' + '='.repeat(60));
   console.log(`🚀 Mock API Server running at http://localhost:${PORT}`);
   console.log('='.repeat(60));
-  console.log('\nAvailable endpoints:');
+  console.log('\nIngestion endpoints:');
   console.log('  POST   /api/ingest/test-cases');
   console.log('  POST   /api/ingest/jira');
   console.log('  POST   /api/ingest/confluence');
   console.log('  GET    /api/ingest/status');
   console.log('  GET    /api/ingest/history');
+  console.log('\nTraceability endpoints:');
+  console.log('  GET    /api/trace');
+  console.log('  GET    /api/trace/matrix');
+  console.log('  GET    /api/trace/requirements');
+  console.log('  GET    /api/trace/test-cases');
+  console.log('  GET    /api/trace/coverage');
+  console.log('\nUtility endpoints:');
   console.log('  GET    /api/health');
   console.log('\n' + '='.repeat(60) + '\n');
 });

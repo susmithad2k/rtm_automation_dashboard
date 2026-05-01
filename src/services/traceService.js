@@ -1,5 +1,10 @@
 import apiClient from './apiClient';
 
+export const getTrace = async (params = {}) => {
+  const response = await apiClient.get('/trace', params);
+  return response;
+};
+
 export const getTraceabilityMatrix = async (filters = {}) => {
   const response = await apiClient.get('/trace/matrix', filters);
   return response;
@@ -44,6 +49,7 @@ export const getCoverageReport = async () => {
 };
 
 export default {
+  getTrace,
   getTraceabilityMatrix,
   getRequirements,
   getTestCases,

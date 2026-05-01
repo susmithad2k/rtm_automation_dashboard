@@ -87,6 +87,27 @@ function Traceability() {
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  // Load initial data from API
+  useEffect(() => {
+    const loadTraceData = async () => {
+      setLoading(true);
+      try {
+        const response = await traceService.getTrace();
+        if (response && response.data) {
+          setData(response.data);
+          setMessage('Traceability data loaded successfully!');
+        }
+      } catch (error) {
+        console.log('Using placeholder data:', error.message);
+        setData(placeholderMatrix);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTraceData();
+  }, []);
+
   // Filter data based on search and filters
   const filteredData = data.filter(item => {
     const matchesSearch = searchTerm === '' || 
@@ -105,13 +126,17 @@ function Traceability() {
     setMessage('');
     setViewMode('matrix');
     try {
-      // Simulate API call - in production, uncomment the line below
-      // const response = await traceService.getTraceabilityMatrix();
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setData(placeholderMatrix);
+      const response = await traceService.getTraceabilityMatrix();
+      if (response && response.data) {
+        setData(response.data);
+      } else {
+        setData(response);
+      }
       setMessage('Traceability matrix loaded successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
+      console.log('Using placeholder data');
+      setData(placeholderMatrix);
     } finally {
       setLoading(false);
     }
@@ -122,11 +147,17 @@ function Traceability() {
     setMessage('');
     setViewMode('requirements');
     try {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      setData(placeholderMatrix);
+      const response = await traceService.getRequirements();
+      if (response && response.data) {
+        setData(response.data);
+      } else {
+        setData(response);
+      }
       setMessage('Requirements loaded successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
+      console.log('Using placeholder data');
+      setData(placeholderMatrix);
     } finally {
       setLoading(false);
     }
@@ -137,11 +168,17 @@ function Traceability() {
     setMessage('');
     setViewMode('testcases');
     try {
-      await new Promise(resolve => setTimeout(resolve, 700));
-      setData(placeholderMatrix);
+      const response = await traceService.getTestCases();
+      if (response && response.data) {
+        setData(response.data);
+      } else {
+        setData(response);
+      }
       setMessage('Test cases loaded successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
+      console.log('Using placeholder data');
+      setData(placeholderMatrix);
     } finally {
       setLoading(false);
     }
@@ -152,11 +189,17 @@ function Traceability() {
     setMessage('');
     setViewMode('coverage');
     try {
-      await new Promise(resolve => setTimeout(resolve, 900));
-      setData(placeholderMatrix);
+      const response = await traceService.getCoverageReport();
+      if (response && response.data) {
+        setData(response.data);
+      } else {
+        setData(response);
+      }
       setMessage('Coverage report generated successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
+      console.log('Using placeholder data');
+      setData(placeholderMatrix);
     } finally {
       setLoading(false);
     }
