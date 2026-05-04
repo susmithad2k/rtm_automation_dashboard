@@ -93,9 +93,13 @@ function Traceability() {
       setLoading(true);
       try {
         const response = await traceService.getTrace();
-        if (response && response.data) {
+        // API returns { success, data, total, timestamp }
+        if (response?.data && Array.isArray(response.data)) {
           setData(response.data);
           setMessage('Traceability data loaded successfully!');
+        } else {
+          console.warn('Unexpected API response structure:', response);
+          setData(placeholderMatrix);
         }
       } catch (error) {
         console.log('Using placeholder data:', error.message);
@@ -127,12 +131,15 @@ function Traceability() {
     setViewMode('matrix');
     try {
       const response = await traceService.getTraceabilityMatrix();
-      if (response && response.data) {
+      // API returns { success, data, total, timestamp }
+      if (response?.data && Array.isArray(response.data)) {
         setData(response.data);
+        setMessage(`Traceability matrix loaded successfully! (${response.data.length} requirements)`);
       } else {
-        setData(response);
+        console.warn('Unexpected API response structure:', response);
+        setData(placeholderMatrix);
+        setMessage('Loaded placeholder data - API response was unexpected');
       }
-      setMessage('Traceability matrix loaded successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.log('Using placeholder data');
@@ -148,12 +155,15 @@ function Traceability() {
     setViewMode('requirements');
     try {
       const response = await traceService.getRequirements();
-      if (response && response.data) {
+      // API returns { success, data, requirements, total, timestamp }
+      if (response?.data && Array.isArray(response.data)) {
         setData(response.data);
+        setMessage(`Requirements loaded successfully! (${response.data.length} items)`);
       } else {
-        setData(response);
+        console.warn('Unexpected API response structure:', response);
+        setData(placeholderMatrix);
+        setMessage('Loaded placeholder data - API response was unexpected');
       }
-      setMessage('Requirements loaded successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.log('Using placeholder data');
@@ -169,12 +179,15 @@ function Traceability() {
     setViewMode('testcases');
     try {
       const response = await traceService.getTestCases();
-      if (response && response.data) {
+      // API returns { success, data, total, timestamp }
+      if (response?.data && Array.isArray(response.data)) {
         setData(response.data);
+        setMessage(`Test cases loaded successfully! (${response.data.length} items)`);
       } else {
-        setData(response);
+        console.warn('Unexpected API response structure:', response);
+        setData(placeholderMatrix);
+        setMessage('Loaded placeholder data - API response was unexpected');
       }
-      setMessage('Test cases loaded successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.log('Using placeholder data');
@@ -190,12 +203,18 @@ function Traceability() {
     setViewMode('coverage');
     try {
       const response = await traceService.getCoverageReport();
-      if (response && response.data) {
+      // API returns { success, data, summary, timestamp }
+      if (response?.data && Array.isArray(response.data)) {
         setData(response.data);
+        const summaryMsg = response.summary 
+          ? `Coverage: ${response.summary.overallCoverage} (${response.summary.verifiedRequirements}/${response.summary.totalRequirements} verified)`
+          : `${response.data.length} items`;
+        setMessage(`Coverage report generated successfully! ${summaryMsg}`);
       } else {
-        setData(response);
+        console.warn('Unexpected API response structure:', response);
+        setData(placeholderMatrix);
+        setMessage('Loaded placeholder data - API response was unexpected');
       }
-      setMessage('Coverage report generated successfully!');
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.log('Using placeholder data');
