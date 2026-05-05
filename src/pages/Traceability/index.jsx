@@ -250,6 +250,16 @@ function Traceability() {
     return 'text-red-600 font-semibold';
   };
 
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterPriority('all');
+    setFilterStatus('all');
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = searchTerm !== '' || filterPriority !== 'all' || filterStatus !== 'all';
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Traceability Management</h1>
@@ -302,6 +312,32 @@ function Traceability() {
 
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-700">Filters</h2>
+            {hasActiveFilters && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Filters Active
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">
+              Showing <span className="font-semibold text-blue-600">{filteredData.length}</span> of <span className="font-semibold">{data.length}</span> requirements
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearFilters}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-150 flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
