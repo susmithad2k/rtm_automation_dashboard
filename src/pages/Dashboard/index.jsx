@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import traceService from '../../services/traceService';
 import impactService from '../../services/impactService';
 import ingestionService from '../../services/ingestionService';
+import CoverageChart from '../../components/charts/CoverageChart';
 
 function Dashboard() {
   const [loading, setLoading] = useState(false);
@@ -60,11 +61,49 @@ function Dashboard() {
           {loading ? (
             <p className="text-gray-500">Loading...</p>
           ) : dashboardData.coverage ? (
-            <div className="space-y-2">
-              <p className="text-3xl font-bold text-blue-600">
-                {dashboardData.coverage.percentage || 'N/A'}%
-              </p>
-              <p className="text-sm text-gray-600">Requirements Coverage</p>
+            <div className="space-y-4">
+              <div className="flex items-baseline gap-2">
+                <p className="text-4xl font-bold text-blue-600">
+                  {dashboardData.coverage.percentage || 'N/A'}%
+                </p>
+                <p className="text-sm text-gray-600">Coverage</p>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${dashboardData.coverage.percentage || 0}%` }}
+                ></div>
+              </div>
+
+              {/* Coverage Details */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                <div>
+                  <p className="text-sm text-gray-600">Total Requirements</p>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {dashboardData.coverage.totalRequirements || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Covered</p>
+                  <p className="text-lg font-semibold text-green-600">
+                    {dashboardData.coverage.coveredRequirements || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Uncovered</p>
+                  <p className="text-lg font-semibold text-red-600">
+                    {dashboardData.coverage.uncoveredRequirements || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Partially Covered</p>
+                  <p className="text-lg font-semibold text-yellow-600">
+                    {dashboardData.coverage.partiallyCovered || 0}
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <p className="text-gray-500">No data available</p>
@@ -107,6 +146,14 @@ function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Detailed Coverage Visualization */}
+      {dashboardData.coverage && (
+        <div className="mt-8 bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-6">Requirements Coverage Analysis</h2>
+          <CoverageChart coverageData={dashboardData.coverage} />
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow">
