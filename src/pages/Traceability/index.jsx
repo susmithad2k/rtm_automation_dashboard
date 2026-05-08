@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import traceService from '../../services/traceService';
-import { Spinner } from '../../components/ui';
+import { Spinner, DataTable, TableStats, Badge } from '../../components/ui';
 
 // Placeholder data for traceability matrix
 const placeholderMatrix = [
@@ -226,20 +226,20 @@ function Traceability() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Verified': return 'bg-green-100 text-green-800';
-      case 'In Progress': return 'bg-yellow-100 text-yellow-800';
-      case 'Pending': return 'bg-orange-100 text-orange-800';
-      case 'Not Started': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Verified': return 'success';
+      case 'In Progress': return 'warning';
+      case 'Pending': return 'orange';
+      case 'Not Started': return 'default';
+      default: return 'default';
     }
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'High': return 'text-red-600 font-semibold';
-      case 'Medium': return 'text-yellow-600 font-semibold';
-      case 'Low': return 'text-green-600 font-semibold';
-      default: return 'text-gray-600';
+      case 'High': return 'error';
+      case 'Medium': return 'warning';
+      case 'Low': return 'success';
+      default: return 'default';
     }
   };
 
@@ -249,6 +249,110 @@ function Traceability() {
     if (value >= 50) return 'text-yellow-600 font-semibold';
     return 'text-red-600 font-semibold';
   };
+
+  // Define table columns
+  const columns = useMemo(() => [
+    {
+      header: 'Req ID',
+      accessor: 'id',
+      sortable: true,
+      render: (value) => (
+        <span className="font-medium text-blue-600">{value}</span>
+      ),
+    },
+    {
+      header: 'Requirement',
+      accessor: 'requirement',
+      sortable: true,
+      render: (value) => (
+        <span className="font-medium text-gray-900">{value}</span>
+      ),
+    },
+    {
+      header: 'Description',
+      accessor: 'description',
+      sortable: true,
+      cellClassName: 'max-w-md',
+      render: (value) => (
+        <span className="text-gray-600">{value}</span>
+      ),
+    },
+    {
+      header: 'Priority',
+      accessor: 'priority',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={getPriorityColor(value)} size="sm">
+          {value}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Test Cases',
+      accessor: 'testCases',
+      sortable: false,
+      render: (testCases) => (
+        testCases && testCases.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {testCases.map((tc, idx) => (
+              <Badge key={idx} variant="info" size="sm">
+                {tc}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span className="text-gray-400 italic text-xs">No test cases</span>
+        )
+      ),
+    },
+    {
+      header: 'Coverage',
+      accessor: 'coverage',
+      sortable: true,
+      render: (value) => (
+        <span className={getCoverageColor(value)}>{value}</span>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={getStatusColor(value)} size="sm" pill>
+          {value}
+        </Badge>
+      ),
+    },
+  ], []);
+
+  // Calculate statistics
+  const tableStats = useMemo(() => [
+    {
+      label: 'Total',
+      value: data.length,
+      color: 'gray',
+    },
+    {
+      label: 'Verified',
+      value: data.filter(d => d.status === 'Verified').length,
+      color: 'green',
+    },
+    {
+      label: 'In Progress',
+      value: data.filter(d => d.status === 'In Progress').length,
+      color: 'yellow',
+    },
+    {
+      label: 'Pending',
+      value: data.filter(d => d.status === 'Pending').length,
+      color: 'orange',
+    },
+    {
+      label: 'Not Started',
+      value: data.filter(d => d.status === 'Not Started').length,
+      color: 'gray',
+    },
+  ], [data]);
 
   // Clear all filters
   const handleClearFilters = () => {
@@ -382,110 +486,18 @@ function Traceability() {
       </div>
 
       {/* Traceability Matrix Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Req ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Requirement
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Test Cases
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Coverage
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredData.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                    No traceability data found. Try adjusting your filters.
-                  </td>
-                </tr>
-              ) : (
-                filteredData.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                      {item.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.requirement}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-md">
-                      {item.description}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={getPriorityColor(item.priority)}>
-                        {item.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.testCases.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {item.testCases.map((tc, idx) => (
-                            <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              {tc}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 italic">No test cases</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={getCoverageColor(item.coverage)}>
-                        {item.coverage}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Table Footer with Stats */}
-        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-          <div className="flex justify-between items-center text-sm text-gray-700">
-            <div>
-              Showing <span className="font-semibold">{filteredData.length}</span> of <span className="font-semibold">{data.length}</span> requirements
-            </div>
-            <div className="flex gap-6">
-              <span>
-                Verified: <span className="font-semibold text-green-600">{data.filter(d => d.status === 'Verified').length}</span>
-              </span>
-              <span>
-                In Progress: <span className="font-semibold text-yellow-600">{data.filter(d => d.status === 'In Progress').length}</span>
-              </span>
-              <span>
-                Not Started: <span className="font-semibold text-gray-600">{data.filter(d => d.status === 'Not Started').length}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <DataTable
+        data={filteredData}
+        columns={columns}
+        itemsPerPage={10}
+        showPagination={true}
+        emptyMessage="No traceability data found. Try adjusting your filters."
+        hoverable={true}
+        striped={true}
+      />
+
+      {/* Table Stats */}
+      {data.length > 0 && <TableStats stats={tableStats} />}
     </div>
   );
 }
-
-export default Traceability;
