@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import traceService from '../../services/traceService';
 import impactService from '../../services/impactService';
 import ingestionService from '../../services/ingestionService';
-import CoverageChart from '../../components/charts/CoverageChart';
+import { 
+  CoverageChart, 
+  TrendChart, 
+  ImpactChart, 
+  TestStatusChart 
+} from '../../components/charts';
 
 function Dashboard() {
   const [loading, setLoading] = useState(false);
@@ -154,6 +159,24 @@ function Dashboard() {
           <CoverageChart coverageData={dashboardData.coverage} />
         </div>
       )}
+
+      {/* Additional Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* Coverage Trend Chart */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <TrendChart />
+        </div>
+
+        {/* Test Status Chart */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <TestStatusChart />
+        </div>
+
+        {/* Impact Analysis Chart - Full Width */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
+          <ImpactChart />
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow">
