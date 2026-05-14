@@ -36,6 +36,11 @@ export const getAffectedTestCases = async (requirementId) => {
   return response;
 };
 
+export const getImpact = async (requirementId) => {
+  const response = await apiClient.get(`/impact/${requirementId}`);
+  return response;
+};
+
 export default {
   analyzeImpact,
   getImpactedItems,
@@ -43,4 +48,5 @@ export default {
   getImpactSummary,
   analyzeRequirementChange,
   getAffectedTestCases,
+  getImpact,
 };

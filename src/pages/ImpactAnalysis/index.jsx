@@ -12,6 +12,11 @@ function ImpactAnalysis() {
   const [itemType, setItemType] = useState('requirement');
   const [impactResults, setImpactResults] = useState(null);
   
+  // Requirement Impact State
+  const [requirementId, setRequirementId] = useState('');
+  const [impactData, setImpactData] = useState(null);
+  const [impactedItemsList, setImpactedItemsList] = useState([]);
+  
   // Impacted Items State
   const [impactedItems, setImpactedItems] = useState([]);
   
@@ -93,6 +98,31 @@ function ImpactAnalysis() {
     } catch (error) {
       showMessage(`Error: ${error.message}`, 'error');
       setHistory([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetImpact = async () => {
+    if (!requirementId.trim()) {
+      showMessage('Please enter a requirement ID', 'error');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await impactService.getImpact(requirementId);
+      setImpactData(response);
+      
+      // Extract impacted items from response
+      const items = response.impactedItems || response.items || [];
+      setImpactedItemsList(Array.isArray(items) ? items : []);
+      
+      showMessage('Impact data loaded successfully!', 'success');
+    } catch (error) {
+      showMessage(`Error: ${error.message}`, 'error');
+      setImpactData(null);
+      setImpactedItemsList([]);
     } finally {
       setLoading(false);
     }
@@ -197,8 +227,60 @@ function ImpactAnalysis() {
     },
   ];
 
+  const impactedItemsListColumns = [
+    {
+      header: 'Item ID',
+      accessor: 'itemId',
+      sortable: true,
+    },
+    {
+      header: 'Type',
+      accessor: 'type',
+      sortable: true,
+      render: (row) => (
+        <Badge variant="info" size="sm">
+          {row.type || row.itemType}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Name',
+      accessor: 'name',
+      sortable: true,
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      sortable: true,
+      render: (row) => {
+        const variants = {
+          passed: 'success',
+          failed: 'error',
+          active: 'success',
+          inactive: 'default',
+        };
+        return (
+          <Badge variant={variants[row.status?.toLowerCase()] || 'default'} size="sm">
+            {row.status || 'N/A'}
+          </Badge>
+        );
+      },
+    },
+    {
+      header: 'Last Modified',
+      accessor: 'lastModified',
+      sortable: true,
+      render: (row) => (
+        <span className="text-gray-600 text-sm">
+          {row.lastModified ? new Date(row.lastModified).toLocaleDateString() : 'N/A'}
+        </span>
+      ),
+    },
+  ];
+
   const tabs = [
     { id: 'analyze', label: 'Analyze Impact', icon: '🔍' },
+    { id: 'requirement', label: 'Requirement Impact', icon: '📋' },
     { id: 'items', label: 'Impacted Items', icon: '📊' },
     { id: 'summary', label: 'Impact Summary', icon: '📈' },
     { id: 'history', label: 'Change History', icon: '📜' },
@@ -388,6 +470,123 @@ function ImpactAnalysis() {
                           ))
                         ) : (
                           <li className="text-gray-700">{impactResults.recommendations}</li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Requirement Impact Tab */}
+        {activeTab === 'requirement' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Get Impact by Requirement ID</h2>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Requirement ID
+                  </label>
+                  <input
+                    type="text"
+                    value={requirementId}
+                    onChange={(e) => setRequirementId(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleGetImpact()}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="REQ-001"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleGetImpact}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? 'Loading...' : 'Get Impact'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Impact Data Display */}
+            {impactData && (
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Impact Details</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="text-sm text-gray-600 mb-1">Requirement ID</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {impactData.requirementId || requirementId}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                    <p className="text-sm text-gray-600 mb-1">Total Impacted Items</p>
+                    <p className="text-3xl font-bold text-purple-600">
+                      {impactedItemsList.length || impactData.totalImpacted || 0}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <p className="text-sm text-gray-600 mb-1">Impact Level</p>
+                    <div className="flex items-center">
+                      <Badge
+                        variant={
+                          impactData.impactLevel === 'high'
+                            ? 'error'
+                            : impactData.impactLevel === 'medium'
+                            ? 'warning'
+                            : 'success'
+                        }
+                        size="lg"
+                      >
+                        {impactData.impactLevel || 'N/A'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Impacted Items List */}
+                {impactedItemsList.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-md font-semibold mb-3">Impacted Items</h4>
+                    <DataTable
+                      data={impactedItemsList}
+                      columns={impactedItemsListColumns}
+                      itemsPerPage={10}
+                    />
+                  </div>
+                )}
+
+                {impactedItemsList.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No impacted items found for this requirement</p>
+                  </div>
+                )}
+
+                {/* Additional Info */}
+                {impactData.description && (
+                  <div className="mt-6">
+                    <h4 className="text-md font-semibold mb-2">Description</h4>
+                    <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">
+                      {impactData.description}
+                    </p>
+                  </div>
+                )}
+
+                {impactData.recommendations && (
+                  <div className="mt-6">
+                    <h4 className="text-md font-semibold mb-3">Recommendations</h4>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <ul className="list-disc list-inside space-y-2">
+                        {Array.isArray(impactData.recommendations) ? (
+                          impactData.recommendations.map((rec, index) => (
+                            <li key={index} className="text-gray-700">{rec}</li>
+                          ))
+                        ) : (
+                          <li className="text-gray-700">{impactData.recommendations}</li>
                         )}
                       </ul>
                     </div>
