@@ -6,7 +6,8 @@ import {
   CoverageChart, 
   TrendChart, 
   ImpactChart, 
-  TestStatusChart 
+  TestStatusChart,
+  TraceabilityGraph 
 } from '../../components/charts';
 
 function Dashboard() {
@@ -15,6 +16,37 @@ function Dashboard() {
     coverage: null,
     impactSummary: null,
     ingestionStatus: null,
+  });
+
+  // Sample graph data with nodes and edges
+  const [graphData, setGraphData] = useState({
+    nodes: [
+      { id: 'REQ-001', name: 'User Authentication', group: 'requirement', val: 25 },
+      { id: 'REQ-002', name: 'Data Validation', group: 'requirement', val: 25 },
+      { id: 'REQ-003', name: 'Report Generation', group: 'requirement', val: 25 },
+      { id: 'REQ-004', name: 'Dashboard Display', group: 'requirement', val: 25 },
+      { id: 'TC-001', name: 'Test Login Flow', group: 'test', val: 18 },
+      { id: 'TC-002', name: 'Test Invalid Credentials', group: 'test', val: 18 },
+      { id: 'TC-003', name: 'Test Data Format', group: 'test', val: 18 },
+      { id: 'TC-004', name: 'Test Report Export', group: 'test', val: 18 },
+      { id: 'TC-005', name: 'Test PDF Generation', group: 'test', val: 18 },
+      { id: 'TC-006', name: 'Test Chart Rendering', group: 'test', val: 18 },
+      { id: 'DEF-001', name: 'Login Bug', group: 'defect', val: 12 },
+      { id: 'DEF-002', name: 'Report Format Issue', group: 'defect', val: 12 },
+      { id: 'DEF-003', name: 'Chart Alignment', group: 'defect', val: 12 },
+    ],
+    links: [
+      { source: 'REQ-001', target: 'TC-001', value: 1 },
+      { source: 'REQ-001', target: 'TC-002', value: 1 },
+      { source: 'REQ-002', target: 'TC-003', value: 1 },
+      { source: 'REQ-003', target: 'TC-004', value: 1 },
+      { source: 'REQ-003', target: 'TC-005', value: 1 },
+      { source: 'REQ-004', target: 'TC-006', value: 1 },
+      { source: 'TC-001', target: 'DEF-001', value: 1 },
+      { source: 'TC-004', target: 'DEF-002', value: 1 },
+      { source: 'TC-005', target: 'DEF-002', value: 1 },
+      { source: 'TC-006', target: 'DEF-003', value: 1 },
+    ],
   });
 
   const loadDashboardData = async () => {
@@ -159,6 +191,11 @@ function Dashboard() {
           <CoverageChart coverageData={dashboardData.coverage} />
         </div>
       )}
+
+      {/* Traceability Graph Visualization */}
+      <div className="mt-8 bg-white p-6 rounded-lg shadow">
+        <TraceabilityGraph graphData={graphData} />
+      </div>
 
       {/* Additional Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
