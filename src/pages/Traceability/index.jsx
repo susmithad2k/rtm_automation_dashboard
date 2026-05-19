@@ -501,3 +501,5 @@ function Traceability() {
     </div>
   );
 }
+
+export default Traceability;

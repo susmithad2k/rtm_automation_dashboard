@@ -102,28 +102,28 @@ function Ingestion() {
         
         <button 
           onClick={handleIngestConfluence}
-          disabled={loading} flex items-center gap-2"
+          disabled={loading}
+          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />} className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        >
+          {loading && <Spinner size="sm" color="white" />}
           {loading ? 'Loading...' : 'Ingest Confluence'}
         </button>
 
         <button 
           onClick={handleGetStatus}
-          disabled={loading} flex items-center gap-2"
+          disabled={loading}
+          className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />} className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        >
+          {loading && <Spinner size="sm" color="white" />}
           {loading ? 'Loading...' : 'Get Status'}
         </button>
 
         <button 
           onClick={handleGetHistory}
-          disabled={loading} flex items-center gap-2"
+          disabled={loading}
+          className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />} className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        >
+          {loading && <Spinner size="sm" color="white" />}
           {loading ? 'Loading...' : 'Get History'}
         </button>
       </div>

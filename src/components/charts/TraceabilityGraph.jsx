@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+
+// Temporarily disable the force graph to avoid AFRAME error
+// We'll create a simple placeholder visualization instead
 
 function TraceabilityGraph({ graphData }) {
   const graphRef = useRef();
@@ -89,42 +91,246 @@ function TraceabilityGraph({ graphData }) {
         </div>
       </div>
       
-      <div className="border border-gray-300 rounded-lg bg-white">
-        <ForceGraph2D
-          ref={graphRef}
-          graphData={data}
-          width={dimensions.width}
-          height={dimensions.height}
-          nodeLabel={getNodeLabel}
-          nodeColor={getNodeColor}
-          nodeRelSize={6}
-          nodeVal={(node) => node.val || 10}
-          linkColor={() => '#94a3b8'}
-          linkWidth={2}
-          linkDirectionalParticles={2}
-          linkDirectionalParticleWidth={2}
-          linkDirectionalParticleSpeed={0.005}
-          enableNodeDrag={true}
-          enableZoomInteraction={true}
-          enablePanInteraction={true}
-          cooldownTicks={100}
-          onNodeClick={(node) => {
-            console.log('Clicked node:', node);
-          }}
-          onNodeHover={(node) => {
-            document.body.style.cursor = node ? 'pointer' : 'default';
-          }}
-        />
+      <div className="border border-gray-300 rounded-lg bg-white p-8">
+        {/* Simple Network Visualization */}
+        <svg width={dimensions.width} height={dimensions.height} className="bg-gray-50">
+          {/* Draw links */}
+          {data.links.map((link, idx) => {
+            const sourceNode = data.nodes.find(n => n.id === link.source || n.id === link.source?.id);
+            const targetNode = data.nodes.find(n => n.id === link.target || n.id === link.target?.id);
+            if (!sourceNode || !targetNode) return null;
+            
+            const sourceIndex = data.nodes.indexOf(sourceNode);
+            const targetIndex = data.nodes.indexOf(targetNode);
+            const sourceX = 100 + (sourceIndex % 5) * 150;
+            const sourceY = 100 + Math.floor(sourceIndex / 5) * 120;
+            const targetX = 100 + (targetIndex % 5) * 150;
+            const targetY = 100 + Math.floor(targetIndex / 5) * 120;
+            
+            return (
+              <line
+                key={idx}
+                x1={sourceX}
+                y1={sourceY}
+                x2={targetX}
+                y2={targetY}
+                stroke="#94a3b8"
+                strokeWidth="2"
+                opacity="0.6"
+              />
+            );
+          })}
+          
+          {/* Draw nodes */}
+          {data.nodes.map((node, idx) => {
+            const x = 100 + (idx % 5) * 150;
+            const y = 100 + Math.floor(idx / 5) * 120;
+            const color = getNodeColor(node);
+            
+            return (
+              <g key={node.id}>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={25}
+                  fill={color}
+                  stroke="white"
+                  strokeWidth="3"
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+                <text
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="text-xs font-semibold fill-white pointer-events-none"
+                >
+                  {node.id.split('-')[1]}
+                </text>
+                <text
+                  x={x}
+                  y={y + 40}
+                  textAnchor="middle"
+                  className="text-xs fill-gray-600 pointer-events-none"
+                  style={{ maxWidth: '100px' }}
+                >
+                  {node.name && node.name.length > 15 ? node.name.substring(0, 15) + '...' : node.name}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
       <div className="mt-4 text-sm text-gray-600">
         <p>
-          <strong>Interactions:</strong> Drag nodes to reposition • Scroll to zoom • 
-          Click and drag to pan • Click nodes for details
+          <strong>Visualization:</strong> Simple network diagram showing relationships between requirements, tests, and defects
         </p>
-        <p className="mt-1">
-          <strong>Stats:</strong> {data.nodes.length} nodes, {data.links.length} connections
-        </p>
+      </div>
+
+      {/* Detailed Metrics Section */}
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-700 mb-4">Traceability Metrics</h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Total Nodes */}
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1">Total Nodes</p>
+            <p className="text-2xl font-bold text-gray-800">{data.nodes.length}</p>
+          </div>
+
+          {/* Total Connections */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-xs text-gray-600 mb-1">Connections</p>
+            <p className="text-2xl font-bold text-blue-600">{data.links.length}</p>
+          </div>
+
+          {/* Requirements */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <p className="text-xs text-gray-600 mb-1">Requirements</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {data.nodes.filter(n => n.group === 'requirement').length}
+            </p>
+          </div>
+
+          {/* Test Cases */}
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <p className="text-xs text-gray-600 mb-1">Test Cases</p>
+            <p className="text-2xl font-bold text-green-600">
+              {data.nodes.filter(n => n.group === 'test').length}
+            </p>
+          </div>
+
+          {/* Defects */}
+          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+            <p className="text-xs text-gray-600 mb-1">Defects</p>
+            <p className="text-2xl font-bold text-red-600">
+              {data.nodes.filter(n => n.group === 'defect').length}
+            </p>
+          </div>
+
+          {/* Coverage Ratio */}
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+            <p className="text-xs text-gray-600 mb-1">Test/Req Ratio</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {data.nodes.filter(n => n.group === 'requirement').length > 0
+                ? (data.nodes.filter(n => n.group === 'test').length / 
+                   data.nodes.filter(n => n.group === 'requirement').length).toFixed(2)
+                : '0.00'}
+            </p>
+          </div>
+
+          {/* Defect Rate */}
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+            <p className="text-xs text-gray-600 mb-1">Defect Rate</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {data.nodes.filter(n => n.group === 'test').length > 0
+                ? ((data.nodes.filter(n => n.group === 'defect').length / 
+                    data.nodes.filter(n => n.group === 'test').length) * 100).toFixed(1)
+                : '0.0'}%
+            </p>
+          </div>
+
+          {/* Avg Connections */}
+          <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+            <p className="text-xs text-gray-600 mb-1">Avg Connections</p>
+            <p className="text-2xl font-bold text-indigo-600">
+              {data.nodes.length > 0
+                ? ((data.links.length * 2) / data.nodes.length).toFixed(2)
+                : '0.00'}
+            </p>
+          </div>
+        </div>
+
+        {/* Additional Stats Row */}
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-3 rounded-lg border border-gray-200">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600">Traceability Completeness</span>
+              <span className="text-sm font-bold text-blue-600">
+                {data.links.length > 0 && data.nodes.filter(n => n.group === 'requirement').length > 0
+                  ? ((data.links.length / (data.nodes.filter(n => n.group === 'requirement').length * 2)) * 100).toFixed(0)
+                  : '0'}%
+              </span>
+            </div>
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                style={{ 
+                  width: `${data.links.length > 0 && data.nodes.filter(n => n.group === 'requirement').length > 0
+                    ? Math.min(100, (data.links.length / (data.nodes.filter(n => n.group === 'requirement').length * 2)) * 100)
+                    : 0}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="bg-white p-3 rounded-lg border border-gray-200">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600">Test Coverage</span>
+              <span className="text-sm font-bold text-green-600">
+                {data.nodes.filter(n => n.group === 'requirement').length > 0
+                  ? ((data.nodes.filter(n => n.group === 'test').length / 
+                      data.nodes.filter(n => n.group === 'requirement').length) * 100).toFixed(0)
+                  : '0'}%
+              </span>
+            </div>
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                style={{ 
+                  width: `${data.nodes.filter(n => n.group === 'requirement').length > 0
+                    ? Math.min(100, (data.nodes.filter(n => n.group === 'test').length / 
+                        data.nodes.filter(n => n.group === 'requirement').length) * 100)
+                    : 0}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="bg-white p-3 rounded-lg border border-gray-200">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600">Quality Score</span>
+              <span className="text-sm font-bold text-purple-600">
+                {(() => {
+                  const reqCount = data.nodes.filter(n => n.group === 'requirement').length;
+                  const testCount = data.nodes.filter(n => n.group === 'test').length;
+                  const defectCount = data.nodes.filter(n => n.group === 'defect').length;
+                  const linkCount = data.links.length;
+                  
+                  if (reqCount === 0) return '0';
+                  
+                  const testCoverage = (testCount / reqCount) * 40;
+                  const traceability = (linkCount / (reqCount * 2)) * 40;
+                  const qualityPenalty = testCount > 0 ? (defectCount / testCount) * 20 : 0;
+                  
+                  return Math.max(0, Math.min(100, testCoverage + traceability - qualityPenalty)).toFixed(0);
+                })()}
+              </span>
+            </div>
+            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+                style={{ 
+                  width: `${(() => {
+                    const reqCount = data.nodes.filter(n => n.group === 'requirement').length;
+                    const testCount = data.nodes.filter(n => n.group === 'test').length;
+                    const defectCount = data.nodes.filter(n => n.group === 'defect').length;
+                    const linkCount = data.links.length;
+                    
+                    if (reqCount === 0) return 0;
+                    
+                    const testCoverage = (testCount / reqCount) * 40;
+                    const traceability = (linkCount / (reqCount * 2)) * 40;
+                    const qualityPenalty = testCount > 0 ? (defectCount / testCount) * 20 : 0;
+                    
+                    return Math.max(0, Math.min(100, testCoverage + traceability - qualityPenalty));
+                  })()}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
