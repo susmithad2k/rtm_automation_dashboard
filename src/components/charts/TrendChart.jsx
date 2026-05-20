@@ -163,19 +163,21 @@ function TrendChart({ trendData }) {
         <div className="bg-blue-50 p-3 rounded-lg">
           <p className="text-sm text-gray-600">Current</p>
           <p className="text-2xl font-bold text-blue-600">
-            {data[data.length - 1]?.coverage}%
+            {data && data.length > 0 ? data[data.length - 1]?.coverage : 0}%
           </p>
         </div>
         <div className="bg-green-50 p-3 rounded-lg">
           <p className="text-sm text-gray-600">Trend</p>
           <p className="text-2xl font-bold text-green-600">
-            +{(data[data.length - 1]?.coverage - data[0]?.coverage).toFixed(1)}%
+            {data && data.length > 0 && data[0]?.coverage !== undefined && data[data.length - 1]?.coverage !== undefined
+              ? `+${(data[data.length - 1].coverage - data[0].coverage).toFixed(1)}%`
+              : '0.0%'}
           </p>
         </div>
         <div className="bg-purple-50 p-3 rounded-lg">
           <p className="text-sm text-gray-600">Total Tests</p>
           <p className="text-2xl font-bold text-purple-600">
-            {data[data.length - 1]?.tests}
+            {data && data.length > 0 ? data[data.length - 1]?.tests : 0}
           </p>
         </div>
       </div>

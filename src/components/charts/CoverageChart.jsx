@@ -68,7 +68,7 @@ function CoverageChart({ coverageData }) {
               stroke="#3b82f6"
               strokeWidth="12"
               fill="transparent"
-              strokeDasharray={`${(percentage / 100) * 439.6} 439.6`}
+              strokeDasharray={`${((percentage || 0) / 100) * (2 * Math.PI * 70)} ${2 * Math.PI * 70}`}
               className="transition-all duration-500"
             />
           </svg>

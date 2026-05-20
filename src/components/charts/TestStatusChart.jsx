@@ -19,6 +19,15 @@ function TestStatusChart({ testData }) {
   const data = testData || defaultData;
   const total = Object.values(data).reduce((sum, val) => sum + val, 0);
 
+  // Handle edge case when total is 0
+  if (total === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No test data available
+      </div>
+    );
+  }
+
   const segments = [
     {
       key: 'passed',

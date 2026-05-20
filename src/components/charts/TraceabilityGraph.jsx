@@ -96,8 +96,10 @@ function TraceabilityGraph({ graphData }) {
         <svg width={dimensions.width} height={dimensions.height} className="bg-gray-50">
           {/* Draw links */}
           {data.links.map((link, idx) => {
-            const sourceNode = data.nodes.find(n => n.id === link.source || n.id === link.source?.id);
-            const targetNode = data.nodes.find(n => n.id === link.target || n.id === link.target?.id);
+            const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+            const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+            const sourceNode = data.nodes.find(n => n.id === sourceId);
+            const targetNode = data.nodes.find(n => n.id === targetId);
             if (!sourceNode || !targetNode) return null;
             
             const sourceIndex = data.nodes.indexOf(sourceNode);

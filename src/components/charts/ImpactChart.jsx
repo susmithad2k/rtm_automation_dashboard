@@ -17,7 +17,7 @@ function ImpactChart({ impactData }) {
   ];
 
   const data = impactData || defaultData;
-  const maxTotal = Math.max(...data.map(d => d.total));
+  const maxTotal = Math.max(...data.map(d => d.total), 1); // Ensure minimum of 1 to avoid division by zero
 
   const getSeverityColor = (severity) => {
     switch (severity) {
