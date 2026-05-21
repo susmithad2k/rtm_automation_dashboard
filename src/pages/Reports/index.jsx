@@ -122,6 +122,28 @@ function Reports() {
         </button>
       </div>
 
+      {/* Risk Summary Section */}
+      <div className="mb-6 bg-white p-6 rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Risk Summary</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="border rounded p-4">
+            <div className="text-sm text-gray-600 mb-1">High Risk</div>
+            <div className="text-2xl font-bold text-red-600">0</div>
+            <div className="text-xs text-gray-500 mt-1">Critical issues requiring immediate attention</div>
+          </div>
+          <div className="border rounded p-4">
+            <div className="text-sm text-gray-600 mb-1">Medium Risk</div>
+            <div className="text-2xl font-bold text-yellow-600">0</div>
+            <div className="text-xs text-gray-500 mt-1">Issues requiring attention soon</div>
+          </div>
+          <div className="border rounded p-4">
+            <div className="text-sm text-gray-600 mb-1">Low Risk</div>
+            <div className="text-2xl font-bold text-green-600">0</div>
+            <div className="text-xs text-gray-500 mt-1">Minor issues for future consideration</div>
+          </div>
+        </div>
+      </div>
+
       {message && (
         <div className={`p-4 rounded mb-4 ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
           {message}
