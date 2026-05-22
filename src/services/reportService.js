@@ -45,6 +45,11 @@ export const scheduleReport = async (reportType, schedule, recipients) => {
   return response;
 };
 
+export const fetchReportData = async () => {
+  const response = await apiClient.get('/report');
+  return response;
+};
+
 export default {
   generateReport,
   getReportList,
@@ -53,4 +58,5 @@ export default {
   deleteReport,
   getReportTemplates,
   scheduleReport,
+  fetchReportData,
 };
