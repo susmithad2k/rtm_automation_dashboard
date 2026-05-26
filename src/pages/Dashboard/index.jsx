@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import traceService from '../../services/traceService';
 import impactService from '../../services/impactService';
 import ingestionService from '../../services/ingestionService';
+import reportService from '../../services/reportService';
 import { 
   CoverageChart, 
   TrendChart, 
@@ -17,6 +18,7 @@ function Dashboard() {
     impactSummary: null,
     ingestionStatus: null,
   });
+  const [reportData, setReportData] = useState(null);
 
   // Sample graph data with nodes and edges
   const [graphData, setGraphData] = useState({
@@ -52,10 +54,11 @@ function Dashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [coverage, impactSummary, ingestionStatus] = await Promise.all([
+      const [coverage, impactSummary, ingestionStatus, report] = await Promise.all([
         traceService.getCoverageReport().catch(() => null),
         impactService.getImpactSummary().catch(() => null),
         ingestionService.getIngestionStatus().catch(() => null),
+        reportService.fetchReportData().catch(() => null),
       ]);
 
       setDashboardData({
@@ -63,6 +66,7 @@ function Dashboard() {
         impactSummary,
         ingestionStatus,
       });
+      setReportData(report);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -89,6 +93,95 @@ function Dashboard() {
         >
           {loading ? 'Refreshing...' : 'Refresh Dashboard'}
         </button>
+      </div>
+
+      {/* Coverage and Risk Summary Cards */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">Coverage & Risk Summary</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Coverage Percentage Card */}
+          <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-600 mb-2">Coverage</span>
+              {loading ? (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              ) : reportData ? (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-blue-600">
+                    {reportData.coveragePercentage || 0}
+                  </span>
+                  <span className="text-xl text-blue-600">%</span>
+                </div>
+              ) : (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              )}
+            </div>
+          </div>
+
+          {/* Total Requirements Card */}
+          <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-600 mb-2">Total Requirements</span>
+              {loading ? (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              ) : reportData ? (
+                <span className="text-3xl font-bold text-purple-600">
+                  {reportData.totalRequirements || 0}
+                </span>
+              ) : (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              )}
+            </div>
+          </div>
+
+          {/* Mapped Requirements Card */}
+          <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-600 mb-2">Mapped Requirements</span>
+              {loading ? (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              ) : reportData ? (
+                <span className="text-3xl font-bold text-green-600">
+                  {reportData.mappedRequirements || 0}
+                </span>
+              ) : (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              )}
+            </div>
+          </div>
+
+          {/* High Risk Items Card */}
+          <div className="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-600 mb-2">High Risk Items</span>
+              {loading ? (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              ) : reportData ? (
+                <span className="text-3xl font-bold text-red-600">
+                  {reportData.highRiskItems || 0}
+                </span>
+              ) : (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              )}
+            </div>
+          </div>
+
+          {/* Untested Requirements Card */}
+          <div className="bg-white p-6 rounded-lg shadow border-l-4 border-orange-500">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-600 mb-2">Untested Requirements</span>
+              {loading ? (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              ) : reportData ? (
+                <span className="text-3xl font-bold text-orange-600">
+                  {reportData.untestedRequirements || 0}
+                </span>
+              ) : (
+                <span className="text-2xl font-bold text-gray-400">--</span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
