@@ -82,6 +82,42 @@ function Reports() {
     }
   };
 
+  const handleDownloadReport = () => {
+    const dataToDownload = reportData || data;
+    
+    if (!dataToDownload) {
+      setMessage('Error: No report data available to download');
+      return;
+    }
+
+    try {
+      // Create a blob with the JSON data
+      const jsonString = JSON.stringify(dataToDownload, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.download = `report-${reportType}-${timestamp}.json`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      setMessage('Report downloaded successfully!');
+    } catch (error) {
+      setMessage(`Error downloading report: ${error.message}`);
+    }
+  };
+
   // Auto-fetch report data on component mount
   useEffect(() => {
     handleFetchReportData();
@@ -147,6 +183,14 @@ function Reports() {
           className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         >
           {loading ? 'Loading...' : 'Get Templates'}
+        </button>
+
+        <button 
+          onClick={handleDownloadReport}
+          disabled={!reportData && !data}
+          className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        >
+          Download Report
         </button>
       </div>
 
