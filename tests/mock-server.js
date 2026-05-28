@@ -107,6 +107,7 @@ const mockTraceabilityMatrix = [
 ];
 
 let ingestionHistory = [];
+let reportsList = [];
 
 // Simulate processing delay
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -323,6 +324,69 @@ const server = http.createServer(async (req, res) => {
         timestamp: new Date().toISOString(),
       };
       sendJSON(res, 200, result);
+      return;
+    }
+
+    // Fetch generic report data for Reports page
+    if (path === '/api/report' && method === 'GET') {
+      await delay(300);
+      const sampleReportData = {
+        summary: {
+          totalRequirements: mockTraceabilityMatrix.length,
+          totalTests: mockTraceabilityMatrix.reduce((acc, r) => acc + r.testCases.length, 0),
+          coverage: 85,
+          passRate: 92,
+        },
+        reports: reportsList,
+        risks: { high: 2, medium: 5, low: 8 },
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, sampleReportData);
+      return;
+    }
+
+    // Generate a report
+    if (path === '/api/reports/generate' && method === 'POST') {
+      const body = await parseBody(req);
+      await delay(800);
+      const id = `RPT-${Date.now()}`;
+      const newReport = {
+        id,
+        reportId: id,
+        reportType: body.reportType || 'generic',
+        status: 'completed',
+        date: new Date().toISOString(),
+        meta: body.filters || {},
+      };
+      reportsList.unshift(newReport);
+      sendJSON(res, 200, { success: true, report: newReport });
+      return;
+    }
+
+    // Get report list
+    if (path === '/api/reports/list' && method === 'GET') {
+      await delay(200);
+      sendJSON(res, 200, { success: true, reports: reportsList });
+      return;
+    }
+
+    // Export report (stub)
+    if (path === '/api/reports/export' && method === 'POST') {
+      const body = await parseBody(req);
+      await delay(300);
+      sendJSON(res, 200, { success: true, message: `Report ${body.reportId} exported as ${body.format}` });
+      return;
+    }
+
+    // Report templates
+    if (path === '/api/reports/templates' && method === 'GET') {
+      await delay(100);
+      const templates = [
+        { id: 'tpl-1', name: 'Executive Summary' },
+        { id: 'tpl-2', name: 'Traceability Overview' },
+        { id: 'tpl-3', name: 'Coverage Summary' },
+      ];
+      sendJSON(res, 200, { success: true, templates });
       return;
     }
 
