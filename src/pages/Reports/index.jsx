@@ -18,9 +18,16 @@ function Reports() {
     try {
       const response = await reportService.generateReport(reportType);
       setData(response);
-      setMessage('Report generated successfully!');
-      // Refresh report list so UI shows the newly generated report
-      await handleGetReportList();
+      
+      // Add the newly generated report to the reports list
+      if (response?.report) {
+        setReportData(prev => ({
+          ...(prev || {}),
+          reports: [response.report, ...(prev?.reports || [])]
+        }));
+      }
+      
+      setMessage(`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} report generated successfully!`);
     } catch (error) {
       setMessage(`Error: ${error.message}`);
     } finally {
@@ -34,11 +41,20 @@ function Reports() {
     try {
       const response = await reportService.getReportList();
       setData(response);
-      // If response contains reports, sync to reportData so DataTable displays them
+      // Update reportData with the reports list
       if (response && response.reports) {
-        setReportData(prev => ({ ...(prev || {}), reports: response.reports }));
+        setReportData(prev => ({ 
+          ...(prev || {}), 
+          reports: response.reports 
+        }));
+      } else if (Array.isArray(response)) {
+        // Handle case where API returns array directly
+        setReportData(prev => ({ 
+          ...(prev || {}), 
+          reports: response 
+        }));
       }
-      setMessage('Report list loaded successfully!');
+      setMessage(`Report list loaded successfully! (${response?.reports?.length || 0} reports)`);
     } catch (error) {
       setMessage(`Error: ${error.message}`);
     } finally {
@@ -47,7 +63,8 @@ function Reports() {
   };
 
   const handleExportReport = async () => {
-    const reportId = data?.reportId || data?.report?.id || data?.id;
+    // Check for reportId from different possible sources
+    const reportId = data?.report?.id || data?.report?.reportId || data?.reportId || data?.id;
     if (!reportId) {
       setMessage('Error: Please generate a report first');
       return;
@@ -136,17 +153,40 @@ function Reports() {
 
   const columns = useMemo(() => [
     { header: 'ID', accessor: 'id', sortable: true },
-    { header: 'Type', accessor: 'type', sortable: true },
+    { 
+      header: 'Type', 
+      accessor: 'reportType', 
+      sortable: true,
+      render: (value) => {
+        const type = value || 'N/A';
+        return <span className="capitalize">{type.replace(/-/g, ' ')}</span>;
+      }
+    },
     {
       header: 'Status',
       accessor: 'status',
       sortable: true,
       render: (value) => {
         const variant = value === 'completed' ? 'success' : value === 'pending' ? 'warning' : 'default';
-        return <Badge variant={variant} pill size="sm">{value}</Badge>;
+        return <Badge variant={variant} pill size="sm">{value || 'unknown'}</Badge>;
       }
     },
-    { header: 'Date', accessor: 'date', sortable: true },
+    { 
+      header: 'Date', 
+      accessor: 'date', 
+      sortable: true,
+      render: (value) => {
+        if (!value) return 'N/A';
+        const date = new Date(value);
+        return date.toLocaleString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    },
   ], []);
 
   const stats = reportData?.summary ? [
@@ -183,9 +223,15 @@ function Reports() {
             <button onClick={handleGenerateReport} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-800 text-white font-semibold py-2 px-3 rounded disabled:opacity-50">{loading ? 'Generating...' : 'Generate'}</button>
             <button onClick={handleFetchReportData} disabled={loading} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 px-3 rounded">Refresh Data</button>
             <button onClick={handleGetReportList} disabled={loading} className="w-full bg-green-600 hover:bg-green-800 text-white py-2 px-3 rounded">Report List</button>
-            <button onClick={handleExportReport} disabled={loading || !data?.reportId} className="w-full bg-purple-600 hover:bg-purple-800 text-white py-2 px-3 rounded">Export PDF</button>
+            <button 
+              onClick={handleExportReport} 
+              disabled={loading || !(data?.report?.id || data?.report?.reportId || data?.reportId || data?.id)} 
+              className="w-full bg-purple-600 hover:bg-purple-800 text-white py-2 px-3 rounded disabled:opacity-50"
+            >
+              Export PDF
+            </button>
             <button onClick={handleGetTemplates} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-800 text-white py-2 px-3 rounded">Templates</button>
-            <button onClick={handleDownloadReport} disabled={!reportData && !data} className="w-full bg-orange-600 hover:bg-orange-800 text-white py-2 px-3 rounded">Download</button>
+            <button onClick={handleDownloadReport} disabled={!reportData && !data} className="w-full bg-orange-600 hover:bg-orange-800 text-white py-2 px-3 rounded disabled:opacity-50">Download</button>
           </div>
 
           {message && (
@@ -198,18 +244,34 @@ function Reports() {
         {/* Content area */}
         <main className="lg:col-span-3">
           {/* Summary stats */}
-          {stats.length > 0 && (
-            <div className="mb-4">
+          {stats.length > 0 ? (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-3">Summary Statistics</h2>
               <TableStats stats={stats} />
+            </div>
+          ) : (
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                <span className="font-semibold">💡 Tip:</span> Click "Refresh Data" to load summary statistics
+              </p>
             </div>
           )}
 
           {/* Reports table */}
           <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3">Generated Reports</h2>
             {reportData?.reports && Array.isArray(reportData.reports) && reportData.reports.length > 0 ? (
               <DataTable data={reportData.reports} columns={columns} itemsPerPage={10} />
             ) : (
-              <div className="bg-white p-6 rounded shadow text-center text-gray-500">No reports available</div>
+              <div className="bg-white p-8 rounded shadow text-center">
+                <div className="text-gray-400 mb-2">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-lg font-medium">No reports available</p>
+                <p className="text-gray-400 text-sm mt-1">Generate a report to get started or load the report list</p>
+              </div>
             )}
           </div>
 
@@ -236,10 +298,12 @@ function Reports() {
           </div>
 
           {/* Generated report data fallback */}
-          {data && (
+          {data && Object.keys(data).length > 0 && (
             <div className="mt-6 bg-white p-4 rounded shadow">
-              <h2 className="text-xl font-semibold mb-2">Generated Report Data</h2>
-              <pre className="bg-gray-100 p-3 rounded overflow-auto max-h-64">{JSON.stringify(data, null, 2)}</pre>
+              <h2 className="text-xl font-semibold mb-2">API Response Details</h2>
+              <div className="bg-gray-50 border border-gray-200 p-3 rounded overflow-auto max-h-96">
+                <pre className="text-xs text-gray-700">{JSON.stringify(data, null, 2)}</pre>
+              </div>
             </div>
           )}
         </main>
