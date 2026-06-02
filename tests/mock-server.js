@@ -308,10 +308,11 @@ const server = http.createServer(async (req, res) => {
       await delay(700);
       const totalReqs = mockTraceabilityMatrix.length;
       const verifiedReqs = mockTraceabilityMatrix.filter(r => r.status === 'Verified').length;
-      const coveragePercentage = ((verifiedReqs / totalReqs) * 100).toFixed(2);
+      const coveragePercentage = parseFloat(((verifiedReqs / totalReqs) * 100).toFixed(2));
       
       const result = {
         success: true,
+        percentage: coveragePercentage,
         data: mockTraceabilityMatrix,
         summary: {
           totalRequirements: totalReqs,
@@ -327,14 +328,25 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Fetch generic report data for Reports page
+    // Fetch generic report data for Reports page and Dashboard
     if (path === '/api/report' && method === 'GET') {
       await delay(300);
+      const totalReqs = mockTraceabilityMatrix.length;
+      const verifiedReqs = mockTraceabilityMatrix.filter(r => r.status === 'Verified').length;
+      const notStartedReqs = mockTraceabilityMatrix.filter(r => r.status === 'Not Started').length;
+      const coveragePercentage = parseFloat(((verifiedReqs / totalReqs) * 100).toFixed(2));
+      const totalTestCases = mockTraceabilityMatrix.reduce((acc, r) => acc + r.testCases.length, 0);
+      
       const sampleReportData = {
+        coveragePercentage: coveragePercentage,
+        totalRequirements: totalReqs,
+        mappedRequirements: totalReqs - notStartedReqs,
+        highRiskItems: 2,
+        untestedRequirements: notStartedReqs,
         summary: {
-          totalRequirements: mockTraceabilityMatrix.length,
-          totalTests: mockTraceabilityMatrix.reduce((acc, r) => acc + r.testCases.length, 0),
-          coverage: 85,
+          totalRequirements: totalReqs,
+          totalTests: totalTestCases,
+          coverage: coveragePercentage,
           passRate: 92,
         },
         reports: reportsList,
@@ -342,6 +354,23 @@ const server = http.createServer(async (req, res) => {
         timestamp: new Date().toISOString(),
       };
       sendJSON(res, 200, sampleReportData);
+      return;
+    }
+
+    // Impact Analysis Summary
+    if (path === '/api/impact/summary' && method === 'GET') {
+      await delay(400);
+      const impactData = {
+        totalChanges: 15,
+        affectedRequirements: 8,
+        affectedTestCases: 23,
+        criticalImpact: 3,
+        mediumImpact: 5,
+        lowImpact: 7,
+        riskScore: 6.5,
+        timestamp: new Date().toISOString(),
+      };
+      sendJSON(res, 200, impactData);
       return;
     }
 
@@ -420,6 +449,14 @@ server.listen(PORT, () => {
   console.log('  GET    /api/trace/requirements');
   console.log('  GET    /api/trace/test-cases');
   console.log('  GET    /api/trace/coverage');
+  console.log('\nReport & Dashboard endpoints:');
+  console.log('  GET    /api/report');
+  console.log('  POST   /api/reports/generate');
+  console.log('  GET    /api/reports/list');
+  console.log('  POST   /api/reports/export');
+  console.log('  GET    /api/reports/templates');
+  console.log('\nImpact Analysis endpoints:');
+  console.log('  GET    /api/impact/summary');
   console.log('\nUtility endpoints:');
   console.log('  GET    /api/health');
   console.log('\n' + '='.repeat(60) + '\n');

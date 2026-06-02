@@ -8,8 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:ingestion": "node tests/ingestion-test.js",
+    "test:dashboard": "node tests/dashboard-test.js",
     "mock-server": "node tests/mock-server.js",
-    "test:with-mock": "start /B node tests/mock-server.js && timeout /t 2 && node tests/ingestion-test.js"
+    "test:with-mock": "start /B node tests/mock-server.js && timeout /t 2 && node tests/ingestion-test.js",
+    "test:dashboard-mock": "start /B node tests/mock-server.js && timeout /t 2 && node tests/dashboard-test.js"
   },
   "dependencies": {
     "react": "^18.2.0",
