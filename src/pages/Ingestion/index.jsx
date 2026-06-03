@@ -1,138 +1,131 @@
 import { useState } from 'react';
 import ingestionService from '../../services/ingestionService';
-import { Spinner } from '../../components/ui';
+import { Spinner, Alert } from '../../components/ui';
+import { useApi } from '../../hooks/useApi';
+import { useError } from '../../contexts/ErrorContext';
 
 function Ingestion() {
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
+  const { showSuccess } = useError();
 
-  const handleLoadTestCases = async () => {
-    setLoading(true);
-    setMessage('');
-    try {
-      const response = await ingestionService.loadTestCases();
+  // Using useApi hook for automatic error handling
+  const { 
+    loading: loadingTestCases, 
+    error: testCasesError,
+    execute: loadTestCases 
+  } = useApi(ingestionService.loadTestCases, {
+    onSuccess: (response) => {
       setData(response);
-      setMessage('Test cases loaded successfully!');
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+      showSuccess('Test cases loaded successfully!');
     }
-  };
+  });
 
-  const handleIngestJira = async () => {
-    setLoading(true);
-    setMessage('');
-    try {
-      const response = await ingestionService.ingestJira();
+  const { 
+    loading: loadingJira, 
+    error: jiraError,
+    execute: ingestJira 
+  } = useApi(ingestionService.ingestJira, {
+    onSuccess: (response) => {
       setData(response);
-      setMessage('Jira data ingested successfully!');
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+      showSuccess('Jira data ingested successfully!');
     }
-  };
+  });
 
-  const handleIngestConfluence = async () => {
-    setLoading(true);
-    setMessage('');
-    try {
-      const response = await ingestionService.ingestConfluence();
+  const { 
+    loading: loadingConfluence, 
+    error: confluenceError,
+    execute: ingestConfluence 
+  } = useApi(ingestionService.ingestConfluence, {
+    onSuccess: (response) => {
       setData(response);
-      setMessage('Confluence data ingested successfully!');
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+      showSuccess('Confluence data ingested successfully!');
     }
-  };
+  });
 
-  const handleGetStatus = async () => {
-    setLoading(true);
-    setMessage('');
-    try {
-      const response = await ingestionService.getIngestionStatus();
+  const { 
+    loading: loadingStatus, 
+    error: statusError,
+    execute: getStatus 
+  } = useApi(ingestionService.getIngestionStatus, {
+    onSuccess: (response) => {
       setData(response);
-      setMessage('Ingestion status retrieved successfully!');
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+      showSuccess('Ingestion status retrieved successfully!');
     }
-  };
+  });
 
-  const handleGetHistory = async () => {
-    setLoading(true);
-    setMessage('');
-    try {
-      const response = await ingestionService.getIngestionHistory();
+  const { 
+    loading: loadingHistory, 
+    error: historyError,
+    execute: getHistory 
+  } = useApi(ingestionService.getIngestionHistory, {
+    onSuccess: (response) => {
       setData(response);
-      setMessage('Ingestion history retrieved successfully!');
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
+      showSuccess('Ingestion history retrieved successfully!');
     }
-  };
+  });
+
+  const loading = loadingTestCases || loadingJira || loadingConfluence || loadingStatus || loadingHistory;
+  const error = testCasesError || jiraError || confluenceError || statusError || historyError;
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Data Ingestion</h1>
       
+      {/* Inline error alert */}
+      {error && (
+        <Alert 
+          message={error} 
+          type="error" 
+          className="mb-4"
+        />
+      )}
+      
       <div className="mb-4 space-x-4 flex flex-wrap gap-2">
         <button 
-          onClick={handleLoadTestCases}
+          onClick={loadTestCases}
           disabled={loading}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />}
-          {loading ? 'Loading...' : 'Load Test Cases'}
+          {loadingTestCases && <Spinner size="sm" color="white" />}
+          {loadingTestCases ? 'Loading...' : 'Load Test Cases'}
         </button>
         
         <button 
-          onClick={handleIngestJira}
+          onClick={ingestJira}
           disabled={loading}
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />}
-          {loading ? 'Loading...' : 'Ingest Jira'}
+          {loadingJira && <Spinner size="sm" color="white" />}
+          {loadingJira ? 'Loading...' : 'Ingest Jira'}
         </button>
         
         <button 
-          onClick={handleIngestConfluence}
+          onClick={ingestConfluence}
           disabled={loading}
           className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />}
-          {loading ? 'Loading...' : 'Ingest Confluence'}
+          {loadingConfluence && <Spinner size="sm" color="white" />}
+          {loadingConfluence ? 'Loading...' : 'Ingest Confluence'}
         </button>
 
         <button 
-          onClick={handleGetStatus}
+          onClick={getStatus}
           disabled={loading}
           className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />}
-          {loading ? 'Loading...' : 'Get Status'}
+          {loadingStatus && <Spinner size="sm" color="white" />}
+          {loadingStatus ? 'Loading...' : 'Get Status'}
         </button>
 
         <button 
-          onClick={handleGetHistory}
+          onClick={getHistory}
           disabled={loading}
           className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 flex items-center gap-2"
         >
-          {loading && <Spinner size="sm" color="white" />}
-          {loading ? 'Loading...' : 'Get History'}
+          {loadingHistory && <Spinner size="sm" color="white" />}
+          {loadingHistory ? 'Loading...' : 'Get History'}
         </button>
       </div>
-
-      {message && (
-        <div className={`p-4 rounded mb-4 ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-          {message}
-        </div>
-      )}
 
       {data && (
         <div className="bg-white p-4 rounded shadow">
