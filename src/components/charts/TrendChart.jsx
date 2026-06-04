@@ -1,37 +1,41 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
+
+// Move default data outside component
+const DEFAULT_TREND_DATA = [
+  { date: '2024-01', coverage: 45, tests: 120 },
+  { date: '2024-02', coverage: 52, tests: 145 },
+  { date: '2024-03', coverage: 58, tests: 168 },
+  { date: '2024-04', coverage: 65, tests: 189 },
+  { date: '2024-05', coverage: 72, tests: 215 },
+  { date: '2024-06', coverage: 78, tests: 234 },
+];
 
 /**
  * Placeholder Trend Chart Component
  * Displays a line chart showing coverage trends over time
  */
-function TrendChart({ trendData }) {
+const TrendChart = memo(function TrendChart({ trendData }) {
   const [hoveredPoint, setHoveredPoint] = useState(null);
 
-  // Placeholder data if none provided
-  const defaultData = [
-    { date: '2024-01', coverage: 45, tests: 120 },
-    { date: '2024-02', coverage: 52, tests: 145 },
-    { date: '2024-03', coverage: 58, tests: 168 },
-    { date: '2024-04', coverage: 65, tests: 189 },
-    { date: '2024-05', coverage: 72, tests: 215 },
-    { date: '2024-06', coverage: 78, tests: 234 },
-  ];
-
-  const data = trendData || defaultData;
-  const maxCoverage = Math.max(...data.map(d => d.coverage), 100);
-  const maxTests = Math.max(...data.map(d => d.tests));
+  const data = trendData || DEFAULT_TREND_DATA;
+  
+  const chartMetrics = useMemo(() => ({
+    maxCoverage: Math.max(...data.map(d => d.coverage), 100),
+    maxTests: Math.max(...data.map(d => d.tests))
+  }), [data]);
 
   // Calculate SVG points for line graph
   const width = 600;
   const height = 200;
   const padding = 40;
 
-  const xScale = (index) => padding + (index / (data.length - 1)) * (width - 2 * padding);
-  const yScale = (value) => height - padding - ((value / maxCoverage) * (height - 2 * padding));
+  const xScale = useCallback((index) => padding + (index / (data.length - 1)) * (width - 2 * padding), [data.length]);
+  const yScale = useCallback((value) => height - padding - ((value / chartMetrics.maxCoverage) * (height - 2 * padding)), [chartMetrics.maxCoverage]);
 
-  const linePoints = data
-    .map((point, index) => `${xScale(index)},${yScale(point.coverage)}`)
-    .join(' ');
+  const linePoints = useMemo(() => 
+    data.map((point, index) => `${xScale(index)},${yScale(point.coverage)}`).join(' '),
+    [data, xScale, yScale]
+  );
 
   return (
     <div className="space-y-4">
@@ -183,6 +187,6 @@ function TrendChart({ trendData }) {
       </div>
     </div>
   );
-}
+});
 
 export default TrendChart;

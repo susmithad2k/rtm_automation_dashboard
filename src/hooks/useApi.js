@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useError } from '../contexts/ErrorContext';
 
 /**
@@ -14,6 +14,14 @@ export const useApi = (apiFunction, options = {}) => {
   const { showErrorToast = true, onSuccess, onError } = options;
   const { showError } = useError();
   
+  // Use refs for callbacks to avoid dependency changes
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  
+  // Update refs when callbacks change
+  onSuccessRef.current = onSuccess;
+  onErrorRef.current = onError;
+  
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -26,8 +34,8 @@ export const useApi = (apiFunction, options = {}) => {
       const result = await apiFunction(...args);
       setData(result);
       
-      if (onSuccess) {
-        onSuccess(result);
+      if (onSuccessRef.current) {
+        onSuccessRef.current(result);
       }
       
       return result;
@@ -39,15 +47,15 @@ export const useApi = (apiFunction, options = {}) => {
         showError(err);
       }
       
-      if (onError) {
-        onError(err);
+      if (onErrorRef.current) {
+        onErrorRef.current(err);
       }
       
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [apiFunction, showErrorToast, onSuccess, onError, showError]);
+  }, [apiFunction, showErrorToast, showError]);
 
   const reset = useCallback(() => {
     setData(null);

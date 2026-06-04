@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import ToastContainer from '../components/ui/ToastContainer';
 
 const ErrorContext = createContext();
@@ -42,12 +42,12 @@ export const ErrorProvider = ({ children }) => {
     addToast(message, 'info');
   }, [addToast]);
 
-  const value = {
+  const value = useMemo(() => ({
     showError,
     showSuccess,
     showWarning,
     showInfo,
-  };
+  }), [showError, showSuccess, showWarning, showInfo]);
 
   return (
     <ErrorContext.Provider value={value}>

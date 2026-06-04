@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 
 /**
  * Modern, reusable DataTable component with sorting, pagination, and custom rendering
@@ -12,7 +12,7 @@ import { useState, useMemo } from 'react';
  * @param {boolean} props.hoverable - Highlight rows on hover (default: true)
  * @param {Function} props.onRowClick - Callback when row is clicked
  */
-function DataTable({
+const DataTable = memo(function DataTable({
   data = [],
   columns = [],
   itemsPerPage = 10,
@@ -51,36 +51,42 @@ function DataTable({
     return sorted;
   }, [data, sortConfig]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = showPagination
-    ? sortedData.slice(startIndex, endIndex)
-    : sortedData;
+  // Pagination logic - memoized
+  const paginationData = useMemo(() => {
+    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = showPagination
+      ? sortedData.slice(startIndex, endIndex)
+      : sortedData;
+    
+    return { totalPages, startIndex, endIndex, paginatedData };
+  }, [sortedData, currentPage, itemsPerPage, showPagination]);
 
-  // Handle sort
-  const handleSort = (columnKey) => {
+  // Handle sort with useCallback
+  const handleSort = useCallback((columnKey) => {
     const column = columns.find((col) => col.accessor === columnKey);
     if (!column || column.sortable === false) return;
 
-    let direction = 'asc';
-    if (sortConfig.key === columnKey && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key: columnKey, direction });
+    setSortConfig(prev => {
+      let direction = 'asc';
+      if (prev.key === columnKey && prev.direction === 'asc') {
+        direction = 'desc';
+      }
+      return { key: columnKey, direction };
+    });
     setCurrentPage(1); // Reset to first page when sorting
-  };
+  }, [columns]);
 
-  // Handle page change
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
+  // Handle page change with useCallback
+  const handlePageChange = useCallback((page) => {
+    if (page >= 1 && page <= paginationData.totalPages) {
       setCurrentPage(page);
     }
-  };
+  }, [paginationData.totalPages]);
 
-  // Get sort icon
-  const getSortIcon = (columnKey) => {
+  // Get sort icon - memoized
+  const getSortIcon = useCallback((columnKey) => {
     if (sortConfig.key !== columnKey) {
       return (
         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,12 +104,13 @@ function DataTable({
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     );
-  };
+  }, [sortConfig]);
 
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
+  // Generate page numbers for pagination - memoized
+  const pageNumbers = useMemo(() => {
     const pages = [];
     const maxVisiblePages = 5;
+    const { totalPages } = paginationData;
 
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
@@ -130,7 +137,7 @@ function DataTable({
     }
 
     return pages;
-  };
+  }, [paginationData.totalPages, currentPage]);
 
   return (
     <div className={`bg-white rounded-lg shadow ${className}`}>
@@ -158,7 +165,7 @@ function DataTable({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {paginatedData.length === 0 ? (
+            {paginationData.paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center text-gray-400">
@@ -170,7 +177,7 @@ function DataTable({
                 </td>
               </tr>
             ) : (
-              paginatedData.map((row, rowIndex) => (
+              paginationData.paginatedData.map((row, rowIndex) => (
                 <tr
                   key={row.id || rowIndex}
                   onClick={() => onRowClick && onRowClick(row)}
@@ -198,14 +205,14 @@ function DataTable({
       </div>
 
       {/* Pagination */}
-      {showPagination && totalPages > 1 && (
+      {showPagination && paginationData.totalPages > 1 && (
         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700">
               Showing{' '}
-              <span className="font-semibold text-gray-900">{startIndex + 1}</span> to{' '}
+              <span className="font-semibold text-gray-900">{paginationData.startIndex + 1}</span> to{' '}
               <span className="font-semibold text-gray-900">
-                {Math.min(endIndex, sortedData.length)}
+                {Math.min(paginationData.endIndex, sortedData.length)}
               </span>{' '}
               of <span className="font-semibold text-gray-900">{sortedData.length}</span> results
             </div>
@@ -224,7 +231,7 @@ function DataTable({
 
               {/* Page Numbers */}
               <div className="flex items-center gap-1">
-                {getPageNumbers().map((page, index) => (
+                {pageNumbers.map((page, index) => (
                   page === '...' ? (
                     <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-500">
                       ...
@@ -250,7 +257,7 @@ function DataTable({
               {/* Next Button */}
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === paginationData.totalPages}
                 className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,6 +270,6 @@ function DataTable({
       )}
     </div>
   );
-}
+});
 
 export default DataTable;

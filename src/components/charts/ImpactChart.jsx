@@ -1,25 +1,25 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
+
+// Move default data outside component
+const DEFAULT_IMPACT_DATA = [
+  { category: 'Requirements', high: 12, medium: 23, low: 45, total: 80 },
+  { category: 'Test Cases', high: 8, medium: 34, low: 58, total: 100 },
+  { category: 'Defects', high: 15, medium: 18, low: 12, total: 45 },
+  { category: 'Use Cases', high: 6, medium: 14, low: 30, total: 50 },
+  { category: 'Documentation', high: 3, medium: 10, low: 22, total: 35 },
+];
 
 /**
  * Placeholder Impact Analysis Chart Component
  * Displays a horizontal bar chart showing impact across different categories
  */
-function ImpactChart({ impactData }) {
+const ImpactChart = memo(function ImpactChart({ impactData }) {
   const [hoveredBar, setHoveredBar] = useState(null);
 
-  // Placeholder data if none provided
-  const defaultData = [
-    { category: 'Requirements', high: 12, medium: 23, low: 45, total: 80 },
-    { category: 'Test Cases', high: 8, medium: 34, low: 58, total: 100 },
-    { category: 'Defects', high: 15, medium: 18, low: 12, total: 45 },
-    { category: 'Use Cases', high: 6, medium: 14, low: 30, total: 50 },
-    { category: 'Documentation', high: 3, medium: 10, low: 22, total: 35 },
-  ];
+  const data = impactData || DEFAULT_IMPACT_DATA;
+  const maxTotal = useMemo(() => Math.max(...data.map(d => d.total), 1), [data]);
 
-  const data = impactData || defaultData;
-  const maxTotal = Math.max(...data.map(d => d.total), 1); // Ensure minimum of 1 to avoid division by zero
-
-  const getSeverityColor = (severity) => {
+  const getSeverityColor = useCallback((severity) => {
     switch (severity) {
       case 'high':
         return { bg: 'bg-red-500', text: 'text-red-600', border: 'border-red-200' };
@@ -30,7 +30,7 @@ function ImpactChart({ impactData }) {
       default:
         return { bg: 'bg-gray-500', text: 'text-gray-600', border: 'border-gray-200' };
     }
-  };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -173,6 +173,6 @@ function ImpactChart({ impactData }) {
       </div>
     </div>
   );
-}
+});
 
 export default ImpactChart;

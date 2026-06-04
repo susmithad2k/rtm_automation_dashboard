@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import traceService from '../../services/traceService';
 import impactService from '../../services/impactService';
 import ingestionService from '../../services/ingestionService';
@@ -11,6 +11,37 @@ import {
   TraceabilityGraph 
 } from '../../components/charts';
 
+// Move static graph data outside component to prevent re-creation
+const INITIAL_GRAPH_DATA = {
+  nodes: [
+    { id: 'REQ-001', name: 'User Authentication', group: 'requirement', val: 25 },
+    { id: 'REQ-002', name: 'Data Validation', group: 'requirement', val: 25 },
+    { id: 'REQ-003', name: 'Report Generation', group: 'requirement', val: 25 },
+    { id: 'REQ-004', name: 'Dashboard Display', group: 'requirement', val: 25 },
+    { id: 'TC-001', name: 'Test Login Flow', group: 'test', val: 18 },
+    { id: 'TC-002', name: 'Test Invalid Credentials', group: 'test', val: 18 },
+    { id: 'TC-003', name: 'Test Data Format', group: 'test', val: 18 },
+    { id: 'TC-004', name: 'Test Report Export', group: 'test', val: 18 },
+    { id: 'TC-005', name: 'Test PDF Generation', group: 'test', val: 18 },
+    { id: 'TC-006', name: 'Test Chart Rendering', group: 'test', val: 18 },
+    { id: 'DEF-001', name: 'Login Bug', group: 'defect', val: 12 },
+    { id: 'DEF-002', name: 'Report Format Issue', group: 'defect', val: 12 },
+    { id: 'DEF-003', name: 'Chart Alignment', group: 'defect', val: 12 },
+  ],
+  links: [
+    { source: 'REQ-001', target: 'TC-001', value: 1 },
+    { source: 'REQ-001', target: 'TC-002', value: 1 },
+    { source: 'REQ-002', target: 'TC-003', value: 1 },
+    { source: 'REQ-003', target: 'TC-004', value: 1 },
+    { source: 'REQ-003', target: 'TC-005', value: 1 },
+    { source: 'REQ-004', target: 'TC-006', value: 1 },
+    { source: 'TC-001', target: 'DEF-001', value: 1 },
+    { source: 'TC-004', target: 'DEF-002', value: 1 },
+    { source: 'TC-005', target: 'DEF-002', value: 1 },
+    { source: 'TC-006', target: 'DEF-003', value: 1 },
+  ],
+};
+
 function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -20,38 +51,10 @@ function Dashboard() {
   });
   const [reportData, setReportData] = useState(null);
 
-  // Sample graph data with nodes and edges
-  const [graphData, setGraphData] = useState({
-    nodes: [
-      { id: 'REQ-001', name: 'User Authentication', group: 'requirement', val: 25 },
-      { id: 'REQ-002', name: 'Data Validation', group: 'requirement', val: 25 },
-      { id: 'REQ-003', name: 'Report Generation', group: 'requirement', val: 25 },
-      { id: 'REQ-004', name: 'Dashboard Display', group: 'requirement', val: 25 },
-      { id: 'TC-001', name: 'Test Login Flow', group: 'test', val: 18 },
-      { id: 'TC-002', name: 'Test Invalid Credentials', group: 'test', val: 18 },
-      { id: 'TC-003', name: 'Test Data Format', group: 'test', val: 18 },
-      { id: 'TC-004', name: 'Test Report Export', group: 'test', val: 18 },
-      { id: 'TC-005', name: 'Test PDF Generation', group: 'test', val: 18 },
-      { id: 'TC-006', name: 'Test Chart Rendering', group: 'test', val: 18 },
-      { id: 'DEF-001', name: 'Login Bug', group: 'defect', val: 12 },
-      { id: 'DEF-002', name: 'Report Format Issue', group: 'defect', val: 12 },
-      { id: 'DEF-003', name: 'Chart Alignment', group: 'defect', val: 12 },
-    ],
-    links: [
-      { source: 'REQ-001', target: 'TC-001', value: 1 },
-      { source: 'REQ-001', target: 'TC-002', value: 1 },
-      { source: 'REQ-002', target: 'TC-003', value: 1 },
-      { source: 'REQ-003', target: 'TC-004', value: 1 },
-      { source: 'REQ-003', target: 'TC-005', value: 1 },
-      { source: 'REQ-004', target: 'TC-006', value: 1 },
-      { source: 'TC-001', target: 'DEF-001', value: 1 },
-      { source: 'TC-004', target: 'DEF-002', value: 1 },
-      { source: 'TC-005', target: 'DEF-002', value: 1 },
-      { source: 'TC-006', target: 'DEF-003', value: 1 },
-    ],
-  });
+  // Use static data directly instead of state
+  const graphData = useMemo(() => INITIAL_GRAPH_DATA, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const [coverage, impactSummary, ingestionStatus, report] = await Promise.all([
@@ -72,15 +75,20 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     loadDashboardData();
-  };
+  }, [loadDashboardData]);
+
+  // Memoize progress bar width style
+  const progressBarStyle = useMemo(() => ({
+    width: `${dashboardData.coverage?.percentage || 0}%`
+  }), [dashboardData.coverage?.percentage]);
 
   return (
     <div className="p-6">
@@ -203,7 +211,7 @@ function Dashboard() {
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
                   className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${dashboardData.coverage.percentage || 0}%` }}
+                  style={progressBarStyle}
                 ></div>
               </div>
 

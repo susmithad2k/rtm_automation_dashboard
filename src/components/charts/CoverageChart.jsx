@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 
-function CoverageChart({ coverageData }) {
+const CoverageChart = memo(function CoverageChart({ coverageData }) {
   const [hoveredSegment, setHoveredSegment] = useState(null);
 
-  if (!coverageData) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No coverage data available
-      </div>
-    );
-  }
+  const handleMouseEnter = useCallback((index) => {
+    setHoveredSegment(index);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setHoveredSegment(null);
+  }, []);
 
   const {
     totalRequirements = 0,
@@ -17,9 +17,9 @@ function CoverageChart({ coverageData }) {
     uncoveredRequirements = 0,
     partiallyCovered = 0,
     percentage = 0
-  } = coverageData;
+  } = coverageData || {};
 
-  const segments = [
+  const segments = useMemo(() => [
     {
       label: 'Covered',
       value: coveredRequirements,
@@ -41,11 +41,24 @@ function CoverageChart({ coverageData }) {
       hoverColor: 'hover:bg-red-600',
       textColor: 'text-red-600'
     }
-  ];
+  ], [coveredRequirements, partiallyCovered, uncoveredRequirements]);
 
-  const getPercentage = (value) => {
+  const getPercentage = useCallback((value) => {
     return totalRequirements > 0 ? ((value / totalRequirements) * 100).toFixed(1) : 0;
-  };
+  }, [totalRequirements]);
+
+  const strokeDasharray = useMemo(() => 
+    `${((percentage || 0) / 100) * (2 * Math.PI * 70)} ${2 * Math.PI * 70}`,
+    [percentage]
+  );
+
+  if (!coverageData) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No coverage data available
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -68,7 +81,7 @@ function CoverageChart({ coverageData }) {
               stroke="#3b82f6"
               strokeWidth="12"
               fill="transparent"
-              strokeDasharray={`${((percentage || 0) / 100) * (2 * Math.PI * 70)} ${2 * Math.PI * 70}`}
+              strokeDasharray={strokeDasharray}
               className="transition-all duration-500"
             />
           </svg>
@@ -90,8 +103,8 @@ function CoverageChart({ coverageData }) {
                 key={index}
                 className={`${segment.color} ${segment.hoverColor} transition-all cursor-pointer relative group`}
                 style={{ width: `${segmentPercentage}%` }}
-                onMouseEnter={() => setHoveredSegment(index)}
-                onMouseLeave={() => setHoveredSegment(null)}
+                onMouseEnter={() => handleMouseEnter(index)}
+                onMouseLeave={handleMouseLeave}
                 title={`${segment.label}: ${segment.value} (${segmentPercentage}%)`}
               >
                 {hoveredSegment === index && (
@@ -114,8 +127,8 @@ function CoverageChart({ coverageData }) {
             className={`text-center p-3 rounded-lg border-2 ${
               hoveredSegment === index ? 'border-gray-400 bg-gray-50' : 'border-gray-200'
             } transition-all cursor-pointer`}
-            onMouseEnter={() => setHoveredSegment(index)}
-            onMouseLeave={() => setHoveredSegment(null)}
+            onMouseEnter={() => handleMouseEnter(index)}
+            onMouseLeave={handleMouseLeave}
           >
             <div className={`text-2xl font-bold ${segment.textColor}`}>
               {segment.value}
@@ -143,6 +156,6 @@ function CoverageChart({ coverageData }) {
       </div>
     </div>
   );
-}
+});
 
 export default CoverageChart;

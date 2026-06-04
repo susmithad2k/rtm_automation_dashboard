@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import traceService from '../../services/traceService';
 import { Spinner, DataTable, TableStats, Badge } from '../../components/ui';
 
-// Placeholder data for traceability matrix
-const placeholderMatrix = [
+// Move placeholder data outside component to prevent re-creation
+const PLACEHOLDER_MATRIX = [
   {
     id: 'REQ-001',
     requirement: 'User Authentication',
@@ -81,7 +81,7 @@ const placeholderMatrix = [
 function Traceability() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(placeholderMatrix);
+  const [data, setData] = useState(PLACEHOLDER_MATRIX);
   const [viewMode, setViewMode] = useState('matrix'); // matrix, requirements, testcases, coverage
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
@@ -99,11 +99,11 @@ function Traceability() {
           setMessage('Traceability data loaded successfully!');
         } else {
           console.warn('Unexpected API response structure:', response);
-          setData(placeholderMatrix);
+          setData(PLACEHOLDER_MATRIX);
         }
       } catch (error) {
         console.log('Using placeholder data:', error.message);
-        setData(placeholderMatrix);
+        setData(PLACEHOLDER_MATRIX);
       } finally {
         setLoading(false);
       }
@@ -112,20 +112,22 @@ function Traceability() {
     loadTraceData();
   }, []);
 
-  // Filter data based on search and filters
-  const filteredData = data.filter(item => {
-    const matchesSearch = searchTerm === '' || 
-      item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.requirement.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPriority = filterPriority === 'all' || item.priority === filterPriority;
-    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-    
-    return matchesSearch && matchesPriority && matchesStatus;
-  });
+  // Memoize filtered data to prevent unnecessary recalculations
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      const matchesSearch = searchTerm === '' || 
+        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.requirement.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesPriority = filterPriority === 'all' || item.priority === filterPriority;
+      const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
+      
+      return matchesSearch && matchesPriority && matchesStatus;
+    });
+  }, [data, searchTerm, filterPriority, filterStatus]);
 
-  const handleGetMatrix = async () => {
+  const handleGetMatrix = useCallback(async () => {
     setLoading(true);
     setMessage('');
     setViewMode('matrix');
@@ -137,17 +139,17 @@ function Traceability() {
         setMessage(`Traceability matrix loaded successfully! (${response.data.length} requirements)`);
       } else {
         console.warn('Unexpected API response structure:', response);
-        setData(placeholderMatrix);
+        setData(PLACEHOLDER_MATRIX);
         setMessage('Loaded placeholder data - API response was unexpected');
       }
     } catch (error) {
       setMessage(`Error: ${error.message}`);
       console.log('Using placeholder data');
-      setData(placeholderMatrix);
+      setData(PLACEHOLDER_MATRIX);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleGetRequirements = async () => {
     setLoading(true);

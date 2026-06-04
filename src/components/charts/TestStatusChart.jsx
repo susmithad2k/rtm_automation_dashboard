@@ -1,23 +1,23 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
+
+// Move default data outside component
+const DEFAULT_TEST_DATA = {
+  passed: 145,
+  failed: 23,
+  blocked: 12,
+  notRun: 45,
+  inProgress: 8,
+};
 
 /**
  * Placeholder Test Status Chart Component
  * Displays a donut chart showing test execution status breakdown
  */
-function TestStatusChart({ testData }) {
+const TestStatusChart = memo(function TestStatusChart({ testData }) {
   const [hoveredSegment, setHoveredSegment] = useState(null);
 
-  // Placeholder data if none provided
-  const defaultData = {
-    passed: 145,
-    failed: 23,
-    blocked: 12,
-    notRun: 45,
-    inProgress: 8,
-  };
-
-  const data = testData || defaultData;
-  const total = Object.values(data).reduce((sum, val) => sum + val, 0);
+  const data = testData || DEFAULT_TEST_DATA;
+  const total = useMemo(() => Object.values(data).reduce((sum, val) => sum + val, 0), [data]);
 
   // Handle edge case when total is 0
   if (total === 0) {
@@ -28,7 +28,7 @@ function TestStatusChart({ testData }) {
     );
   }
 
-  const segments = [
+  const segments = useMemo(() => [
     {
       key: 'passed',
       label: 'Passed',
@@ -64,7 +64,7 @@ function TestStatusChart({ testData }) {
       color: '#3b82f6',
       lightColor: '#dbeafe',
     },
-  ];
+  ], [data]);
 
   // Calculate SVG arc paths for donut chart
   const size = 200;
@@ -226,6 +226,6 @@ function TestStatusChart({ testData }) {
       </div>
     </div>
   );
-}
+});
 
 export default TestStatusChart;

@@ -1,26 +1,54 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, memo } from 'react';
 
-// Temporarily disable the force graph to avoid AFRAME error
-// We'll create a simple placeholder visualization instead
+// Default sample data moved outside component
+const DEFAULT_DATA = {
+  nodes: [
+    { id: 'REQ-001', name: 'User Authentication', group: 'requirement', val: 20 },
+    { id: 'REQ-002', name: 'Data Validation', group: 'requirement', val: 20 },
+    { id: 'REQ-003', name: 'Report Generation', group: 'requirement', val: 20 },
+    { id: 'TC-001', name: 'Test Login Flow', group: 'test', val: 15 },
+    { id: 'TC-002', name: 'Test Invalid Data', group: 'test', val: 15 },
+    { id: 'TC-003', name: 'Test Report Export', group: 'test', val: 15 },
+    { id: 'TC-004', name: 'Test PDF Generation', group: 'test', val: 15 },
+    { id: 'DEF-001', name: 'Login Bug', group: 'defect', val: 10 },
+    { id: 'DEF-002', name: 'Report Format Issue', group: 'defect', val: 10 },
+  ],
+  links: [
+    { source: 'REQ-001', target: 'TC-001', value: 1 },
+    { source: 'REQ-002', target: 'TC-002', value: 1 },
+    { source: 'REQ-003', target: 'TC-003', value: 1 },
+    { source: 'REQ-003', target: 'TC-004', value: 1 },
+    { source: 'TC-001', target: 'DEF-001', value: 1 },
+    { source: 'TC-003', target: 'DEF-002', value: 1 },
+    { source: 'TC-004', target: 'DEF-002', value: 1 },
+  ],
+};
 
-function TraceabilityGraph({ graphData }) {
+// Node color mapping
+const NODE_COLORS = {
+  requirement: '#3b82f6', // blue
+  test: '#10b981', // green
+  defect: '#ef4444', // red
+  default: '#6b7280', // gray
+};
+
+const TraceabilityGraph = memo(function TraceabilityGraph({ graphData }) {
   const graphRef = useRef();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const containerRef = useRef();
 
-  useEffect(() => {
-    // Resize graph to fit container
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const { width } = containerRef.current.getBoundingClientRect();
-        setDimensions({ width: width, height: 600 });
-      }
-    };
+  const updateDimensions = useCallback(() => {
+    if (containerRef.current) {
+      const { width } = containerRef.current.getBoundingClientRect();
+      setDimensions({ width: width, height: 600 });
+    }
+  }, []);
 
+  useEffect(() => {
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
+  }, [updateDimensions]);
 
   useEffect(() => {
     // Center the graph on mount
@@ -29,47 +57,21 @@ function TraceabilityGraph({ graphData }) {
     }
   }, [graphData]);
 
-  // Default sample data if none provided
-  const defaultData = {
-    nodes: [
-      { id: 'REQ-001', name: 'User Authentication', group: 'requirement', val: 20 },
-      { id: 'REQ-002', name: 'Data Validation', group: 'requirement', val: 20 },
-      { id: 'REQ-003', name: 'Report Generation', group: 'requirement', val: 20 },
-      { id: 'TC-001', name: 'Test Login Flow', group: 'test', val: 15 },
-      { id: 'TC-002', name: 'Test Invalid Data', group: 'test', val: 15 },
-      { id: 'TC-003', name: 'Test Report Export', group: 'test', val: 15 },
-      { id: 'TC-004', name: 'Test PDF Generation', group: 'test', val: 15 },
-      { id: 'DEF-001', name: 'Login Bug', group: 'defect', val: 10 },
-      { id: 'DEF-002', name: 'Report Format Issue', group: 'defect', val: 10 },
-    ],
-    links: [
-      { source: 'REQ-001', target: 'TC-001', value: 1 },
-      { source: 'REQ-002', target: 'TC-002', value: 1 },
-      { source: 'REQ-003', target: 'TC-003', value: 1 },
-      { source: 'REQ-003', target: 'TC-004', value: 1 },
-      { source: 'TC-001', target: 'DEF-001', value: 1 },
-      { source: 'TC-003', target: 'DEF-002', value: 1 },
-      { source: 'TC-004', target: 'DEF-002', value: 1 },
-    ],
-  };
+  const data = graphData || DEFAULT_DATA;
 
-  const data = graphData || defaultData;
+  // Node color based on group type - memoized
+  const getNodeColor = useCallback((node) => {
+    return NODE_COLORS[node.group] || NODE_COLORS.default;
+  }, []);
 
-  // Node color based on group type
-  const getNodeColor = (node) => {
-    const colors = {
-      requirement: '#3b82f6', // blue
-      test: '#10b981', // green
-      defect: '#ef4444', // red
-      default: '#6b7280', // gray
-    };
-    return colors[node.group] || colors.default;
-  };
-
-  // Node label
-  const getNodeLabel = (node) => {
-    return `${node.id}: ${node.name || ''}`;
-  };
+  // Memoize metrics calculations
+  const metrics = useMemo(() => ({
+    totalNodes: data.nodes.length,
+    totalConnections: data.links.length,
+    requirements: data.nodes.filter(n => n.group === 'requirement').length,
+    testCases: data.nodes.filter(n => n.group === 'test').length,
+    defects: data.nodes.filter(n => n.group === 'defect').length,
+  }), [data]);
 
   return (
     <div ref={containerRef} className="w-full">
@@ -178,46 +180,39 @@ function TraceabilityGraph({ graphData }) {
           {/* Total Nodes */}
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Total Nodes</p>
-            <p className="text-2xl font-bold text-gray-800">{data.nodes.length}</p>
+            <p className="text-2xl font-bold text-gray-800">{metrics.totalNodes}</p>
           </div>
 
           {/* Total Connections */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-600 mb-1">Connections</p>
-            <p className="text-2xl font-bold text-blue-600">{data.links.length}</p>
+            <p className="text-2xl font-bold text-gray-800">{metrics.totalConnections}</p>
           </div>
 
           {/* Requirements */}
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <p className="text-xs text-gray-600 mb-1">Requirements</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {data.nodes.filter(n => n.group === 'requirement').length}
-            </p>
+            <p className="text-2xl font-bold text-blue-600">{metrics.requirements}</p>
           </div>
 
           {/* Test Cases */}
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
             <p className="text-xs text-gray-600 mb-1">Test Cases</p>
-            <p className="text-2xl font-bold text-green-600">
-              {data.nodes.filter(n => n.group === 'test').length}
-            </p>
+            <p className="text-2xl font-bold text-green-600">{metrics.testCases}</p>
           </div>
 
           {/* Defects */}
           <div className="bg-red-50 p-4 rounded-lg border border-red-200">
             <p className="text-xs text-gray-600 mb-1">Defects</p>
-            <p className="text-2xl font-bold text-red-600">
-              {data.nodes.filter(n => n.group === 'defect').length}
-            </p>
+            <p className="text-2xl font-bold text-red-600">{metrics.defects}</p>
           </div>
 
           {/* Coverage Ratio */}
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <p className="text-xs text-gray-600 mb-1">Test/Req Ratio</p>
             <p className="text-2xl font-bold text-purple-600">
-              {data.nodes.filter(n => n.group === 'requirement').length > 0
-                ? (data.nodes.filter(n => n.group === 'test').length / 
-                   data.nodes.filter(n => n.group === 'requirement').length).toFixed(2)
+              {metrics.requirements > 0
+                ? (metrics.testCases / metrics.requirements).toFixed(2)
                 : '0.00'}
             </p>
           </div>
@@ -226,9 +221,8 @@ function TraceabilityGraph({ graphData }) {
           <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
             <p className="text-xs text-gray-600 mb-1">Defect Rate</p>
             <p className="text-2xl font-bold text-orange-600">
-              {data.nodes.filter(n => n.group === 'test').length > 0
-                ? ((data.nodes.filter(n => n.group === 'defect').length / 
-                    data.nodes.filter(n => n.group === 'test').length) * 100).toFixed(1)
+              {metrics.testCases > 0
+                ? ((metrics.defects / metrics.testCases) * 100).toFixed(1)
                 : '0.0'}%
             </p>
           </div>
@@ -237,8 +231,8 @@ function TraceabilityGraph({ graphData }) {
           <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
             <p className="text-xs text-gray-600 mb-1">Avg Connections</p>
             <p className="text-2xl font-bold text-indigo-600">
-              {data.nodes.length > 0
-                ? ((data.links.length * 2) / data.nodes.length).toFixed(2)
+              {metrics.totalNodes > 0
+                ? ((metrics.totalConnections * 2) / metrics.totalNodes).toFixed(2)
                 : '0.00'}
             </p>
           </div>
@@ -250,8 +244,8 @@ function TraceabilityGraph({ graphData }) {
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Traceability Completeness</span>
               <span className="text-sm font-bold text-blue-600">
-                {data.links.length > 0 && data.nodes.filter(n => n.group === 'requirement').length > 0
-                  ? ((data.links.length / (data.nodes.filter(n => n.group === 'requirement').length * 2)) * 100).toFixed(0)
+                {metrics.requirements > 0
+                  ? ((metrics.totalConnections / (metrics.requirements * 2)) * 100).toFixed(0)
                   : '0'}%
               </span>
             </div>
@@ -259,8 +253,8 @@ function TraceabilityGraph({ graphData }) {
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                 style={{ 
-                  width: `${data.links.length > 0 && data.nodes.filter(n => n.group === 'requirement').length > 0
-                    ? Math.min(100, (data.links.length / (data.nodes.filter(n => n.group === 'requirement').length * 2)) * 100)
+                  width: `${metrics.requirements > 0
+                    ? Math.min(100, (metrics.totalConnections / (metrics.requirements * 2)) * 100)
                     : 0}%` 
                 }}
               ></div>
@@ -271,9 +265,8 @@ function TraceabilityGraph({ graphData }) {
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-600">Test Coverage</span>
               <span className="text-sm font-bold text-green-600">
-                {data.nodes.filter(n => n.group === 'requirement').length > 0
-                  ? ((data.nodes.filter(n => n.group === 'test').length / 
-                      data.nodes.filter(n => n.group === 'requirement').length) * 100).toFixed(0)
+                {metrics.requirements > 0
+                  ? ((metrics.testCases / metrics.requirements) * 100).toFixed(0)
                   : '0'}%
               </span>
             </div>
@@ -281,9 +274,8 @@ function TraceabilityGraph({ graphData }) {
               <div 
                 className="bg-green-600 h-2 rounded-full transition-all duration-500"
                 style={{ 
-                  width: `${data.nodes.filter(n => n.group === 'requirement').length > 0
-                    ? Math.min(100, (data.nodes.filter(n => n.group === 'test').length / 
-                        data.nodes.filter(n => n.group === 'requirement').length) * 100)
+                  width: `${metrics.requirements > 0
+                    ? Math.min(100, (metrics.testCases / metrics.requirements) * 100)
                     : 0}%` 
                 }}
               ></div>
@@ -295,17 +287,10 @@ function TraceabilityGraph({ graphData }) {
               <span className="text-xs text-gray-600">Quality Score</span>
               <span className="text-sm font-bold text-purple-600">
                 {(() => {
-                  const reqCount = data.nodes.filter(n => n.group === 'requirement').length;
-                  const testCount = data.nodes.filter(n => n.group === 'test').length;
-                  const defectCount = data.nodes.filter(n => n.group === 'defect').length;
-                  const linkCount = data.links.length;
-                  
-                  if (reqCount === 0) return '0';
-                  
-                  const testCoverage = (testCount / reqCount) * 40;
-                  const traceability = (linkCount / (reqCount * 2)) * 40;
-                  const qualityPenalty = testCount > 0 ? (defectCount / testCount) * 20 : 0;
-                  
+                  if (metrics.requirements === 0) return '0';
+                  const testCoverage = (metrics.testCases / metrics.requirements) * 40;
+                  const traceability = (metrics.totalConnections / (metrics.requirements * 2)) * 40;
+                  const qualityPenalty = metrics.testCases > 0 ? (metrics.defects / metrics.testCases) * 20 : 0;
                   return Math.max(0, Math.min(100, testCoverage + traceability - qualityPenalty)).toFixed(0);
                 })()}
               </span>
@@ -315,17 +300,10 @@ function TraceabilityGraph({ graphData }) {
                 className="bg-purple-600 h-2 rounded-full transition-all duration-500"
                 style={{ 
                   width: `${(() => {
-                    const reqCount = data.nodes.filter(n => n.group === 'requirement').length;
-                    const testCount = data.nodes.filter(n => n.group === 'test').length;
-                    const defectCount = data.nodes.filter(n => n.group === 'defect').length;
-                    const linkCount = data.links.length;
-                    
-                    if (reqCount === 0) return 0;
-                    
-                    const testCoverage = (testCount / reqCount) * 40;
-                    const traceability = (linkCount / (reqCount * 2)) * 40;
-                    const qualityPenalty = testCount > 0 ? (defectCount / testCount) * 20 : 0;
-                    
+                    if (metrics.requirements === 0) return 0;
+                    const testCoverage = (metrics.testCases / metrics.requirements) * 40;
+                    const traceability = (metrics.totalConnections / (metrics.requirements * 2)) * 40;
+                    const qualityPenalty = metrics.testCases > 0 ? (metrics.defects / metrics.testCases) * 20 : 0;
                     return Math.max(0, Math.min(100, testCoverage + traceability - qualityPenalty));
                   })()}%` 
                 }}
@@ -336,6 +314,6 @@ function TraceabilityGraph({ graphData }) {
       </div>
     </div>
   );
-}
+});
 
 export default TraceabilityGraph;
